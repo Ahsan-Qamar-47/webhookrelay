@@ -15,12 +15,12 @@ var (
  | || | |  _| | _|| __ | (_) |   /| __ | _|| | / _ \ \ V /  
  |_||_| |_|   |___|_||_|\___/|_|_|_||_|___|___/_/ \_\ |_|   
 `
-	Cyan    = color.New(color.FgCyan, color.Bold).SprintfFunc()
-	Green   = color.New(color.FgGreen, color.Bold).SprintfFunc()
-	Yellow  = color.New(color.FgYellow).SprintfFunc()
-	Red     = color.New(color.FgRed, color.Bold).SprintfFunc()
-	Dim     = color.New(color.FgWhite, color.Faint).SprintfFunc()
-	Bold    = color.New(color.Bold).SprintfFunc()
+	Cyan   = color.New(color.FgCyan, color.Bold).SprintfFunc()
+	Green  = color.New(color.FgGreen, color.Bold).SprintfFunc()
+	Yellow = color.New(color.FgYellow).SprintfFunc()
+	Red    = color.New(color.FgRed, color.Bold).SprintfFunc()
+	Dim    = color.New(color.FgWhite, color.Faint).SprintfFunc()
+	Bold   = color.New(color.Bold).SprintfFunc()
 )
 
 // PrintBanner prints the ASCII banner if quiet mode is not enabled.
@@ -45,7 +45,7 @@ func Success(w io.Writer, quiet bool, format string, a ...interface{}) {
 		w = os.Stdout
 	}
 	msg := fmt.Sprintf(format, a...)
-	fmt.Fprintln(w, Green("✔ ") + msg)
+	fmt.Fprintln(w, Green("✔ ")+msg)
 }
 
 // Info prints a cyan info message if quiet mode is not enabled.
@@ -57,7 +57,7 @@ func Info(w io.Writer, quiet bool, format string, a ...interface{}) {
 		w = os.Stdout
 	}
 	msg := fmt.Sprintf(format, a...)
-	fmt.Fprintln(w, Cyan("ℹ ") + msg)
+	fmt.Fprintln(w, Cyan("ℹ ")+msg)
 }
 
 // Warn prints a yellow warning message if quiet mode is not enabled.
@@ -69,7 +69,7 @@ func Warn(w io.Writer, quiet bool, format string, a ...interface{}) {
 		w = os.Stdout
 	}
 	msg := fmt.Sprintf(format, a...)
-	fmt.Fprintln(w, Yellow("⚠ ") + msg)
+	fmt.Fprintln(w, Yellow("⚠ ")+msg)
 }
 
 // Error prints a red error message.
@@ -78,7 +78,7 @@ func Error(w io.Writer, format string, a ...interface{}) {
 		w = os.Stderr
 	}
 	msg := fmt.Sprintf(format, a...)
-	fmt.Fprintln(w, Red("✖ Error: ") + msg)
+	fmt.Fprintln(w, Red("✖ Error: ")+msg)
 }
 
 // Debug prints a debug message if verbose is true and quiet is false.
