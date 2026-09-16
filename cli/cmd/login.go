@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/Ahsan-Qamar-47/webhookrelay/cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -14,7 +15,8 @@ var loginCmd = &cobra.Command{
 	Short: "Log in to Webhook Relay service",
 	Long:  `Authenticate with your Webhook Relay account credentials.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Println("Login not implemented — Week 3")
+		ui.Debug(cmd.OutOrStdout(), VerboseFlag, QuietFlag, "Attempting login with provided email credentials...")
+		ui.Info(cmd.OutOrStdout(), QuietFlag, "Login not implemented — Week 3")
 	},
 }
 

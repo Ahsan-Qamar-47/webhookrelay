@@ -16,6 +16,7 @@ dev:
 
 test:
 	cd cli && go test ./...
+	cd server && npm test
 
 clean:
 	docker compose down -v

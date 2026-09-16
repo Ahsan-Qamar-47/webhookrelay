@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/Ahsan-Qamar-47/webhookrelay/cli/internal/config"
+	"github.com/Ahsan-Qamar-47/webhookrelay/cli/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -10,6 +11,8 @@ var statusCmd = &cobra.Command{
 	Short: "Display Webhook Relay CLI status",
 	Long:  `Show current configuration path, connection status, endpoint URL, and last event timestamp.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		ui.Debug(cmd.OutOrStdout(), VerboseFlag, QuietFlag, "Loading status information...")
+
 		cfgPath, err := config.GetConfigPath()
 		if err != nil {
 			cfgPath = "Unknown"
@@ -21,11 +24,16 @@ var statusCmd = &cobra.Command{
 			endpoint = cfg.Endpoint
 		}
 
-		cmd.Println("Webhook Relay CLI Status:")
-		cmd.Printf("  Config File Path: %s\n", cfgPath)
-		cmd.Printf("  Connected:        %s\n", "false")
-		cmd.Printf("  Endpoint URL:     %s\n", endpoint)
-		cmd.Printf("  Last Event:       %s\n", "N/A")
+		if QuietFlag {
+			cmd.Printf("config=%s connected=false endpoint=%s last_event=N/A\n", cfgPath, endpoint)
+			return
+		}
+
+		ui.Info(cmd.OutOrStdout(), false, "Webhook Relay CLI Status:")
+		cmd.Printf("  Config File Path: %s\n", ui.Bold(cfgPath))
+		cmd.Printf("  Connected:        %s\n", ui.Yellow("false"))
+		cmd.Printf("  Endpoint URL:     %s\n", ui.Cyan(endpoint))
+		cmd.Printf("  Last Event:       %s\n", ui.Dim("N/A"))
 	},
 }
 

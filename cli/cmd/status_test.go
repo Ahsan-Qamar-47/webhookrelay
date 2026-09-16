@@ -7,6 +7,7 @@ import (
 )
 
 func TestStatusCommand(t *testing.T) {
+	resetFlags()
 	buf := new(bytes.Buffer)
 	rootCmd.SetOut(buf)
 	rootCmd.SetArgs([]string{"status"})
@@ -32,4 +33,5 @@ func TestStatusCommand(t *testing.T) {
 	if !strings.Contains(output, "Last Event:") {
 		t.Errorf("Expected output to contain Last Event, got %q", output)
 	}
+	resetFlags()
 }

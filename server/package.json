@@ -6,7 +6,7 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "lint": "eslint .",
-    "test": "node --test"
+    "test": "NODE_ENV=test node --test"
   },
   "dependencies": {
     "cors": "^2.8.6",

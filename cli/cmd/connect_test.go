@@ -7,7 +7,7 @@ import (
 )
 
 func TestConnectCommand_NoToken(t *testing.T) {
-	connectToken = ""
+	resetFlags()
 	buf := new(bytes.Buffer)
 	rootCmd.SetOut(buf)
 	rootCmd.SetErr(buf)
@@ -17,10 +17,11 @@ func TestConnectCommand_NoToken(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Expected error when executing connect command without token, got nil")
 	}
+	resetFlags()
 }
 
 func TestConnectCommand_WithToken(t *testing.T) {
-	connectToken = ""
+	resetFlags()
 	buf := new(bytes.Buffer)
 	rootCmd.SetOut(buf)
 	rootCmd.SetErr(buf)
@@ -36,4 +37,5 @@ func TestConnectCommand_WithToken(t *testing.T) {
 	if !strings.Contains(output, expected) {
 		t.Errorf("Expected output to contain %q, got %q", expected, output)
 	}
+	resetFlags()
 }

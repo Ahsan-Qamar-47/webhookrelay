@@ -7,6 +7,7 @@ import (
 )
 
 func TestLoginCommand(t *testing.T) {
+	resetFlags()
 	buf := new(bytes.Buffer)
 	rootCmd.SetOut(buf)
 	rootCmd.SetArgs([]string{"login", "--email", "user@example.com", "--password", "secret"})
@@ -21,4 +22,5 @@ func TestLoginCommand(t *testing.T) {
 	if !strings.Contains(output, expected) {
 		t.Errorf("Expected output to contain %q, got %q", expected, output)
 	}
+	resetFlags()
 }

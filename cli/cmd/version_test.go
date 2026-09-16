@@ -7,6 +7,7 @@ import (
 )
 
 func TestVersionCommand(t *testing.T) {
+	resetFlags()
 	buf := new(bytes.Buffer)
 	rootCmd.SetOut(buf)
 	rootCmd.SetArgs([]string{"version"})
@@ -21,4 +22,5 @@ func TestVersionCommand(t *testing.T) {
 	if !strings.Contains(output, expected) {
 		t.Errorf("Expected output to contain %q, got %q", expected, output)
 	}
+	resetFlags()
 }
