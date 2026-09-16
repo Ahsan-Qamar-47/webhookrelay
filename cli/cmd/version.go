@@ -8,7 +8,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number of relay",
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Println("Webhook Relay CLI v0.1.0")
+		cmd.Println("WebhookRelay CLI v0.1.0")
 	},
 }
 
