@@ -1,5 +1,5 @@
 export default function setupTunnel(wss) {
-  wss.on('connection', (ws, req) => {
+  wss.on('connection', (ws) => {
     console.log('New CLI client connected');
 
     ws.on('message', (message) => {
