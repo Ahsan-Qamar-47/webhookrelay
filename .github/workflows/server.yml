@@ -65,6 +65,7 @@ jobs:
           cd server
           npm test
         env:
+          DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/webhookrelay
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
           POSTGRES_USER: postgres

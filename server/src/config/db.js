@@ -3,7 +3,20 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const connectionString = process.env.DATABASE_URL || 'postgresql://relay:relay_pass@localhost:5434/webhookrelay';
+function getConnectionString() {
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+  const user = process.env.POSTGRES_USER || process.env.DB_USER || 'relay';
+  const password = process.env.POSTGRES_PASSWORD || process.env.DB_PASSWORD || 'relay_pass';
+  const host = process.env.POSTGRES_HOST || process.env.DB_HOST || 'localhost';
+  const port = process.env.POSTGRES_PORT || process.env.DB_PORT || '5434';
+  const database = process.env.POSTGRES_DB || process.env.DB_NAME || 'webhookrelay';
+
+  return `postgresql://${user}:${password}@${host}:${port}/${database}`;
+}
+
+const connectionString = getConnectionString();
 
 export const pool = new pg.Pool({
   connectionString,
@@ -32,14 +45,16 @@ export async function query(text, params) {
     }
     return res;
   } catch (err) {
-    console.error(`[DB Query Error] ${err.message} | query: ${text}`);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error(`[DB Query Error] ${err.message} | query: ${text}`);
+    }
     throw err;
   }
 }
 
 /**
  * Healthcheck function to test PostgreSQL connectivity
- * @returns {Promise<{status: string, latency_ms: number, timestamp?: Date, version?: string, error?: string}>}
+ * @returns {Promise<{status: string, latency_ms?: number, timestamp?: Date, version?: string, error?: string}>}
  */
 export async function checkDbHealth() {
   const start = Date.now();
