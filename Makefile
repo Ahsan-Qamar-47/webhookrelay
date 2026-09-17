@@ -14,6 +14,11 @@ cli:
 dev:
 	@echo "Use separate terminals for 'cd server && npm run dev' and 'cd web && npm run dev'"
 
+lint:
+	cd cli && go vet ./...
+	cd server && npm run lint
+	cd web && npm run lint
+
 test:
 	cd cli && go test ./...
 	cd server && npm test

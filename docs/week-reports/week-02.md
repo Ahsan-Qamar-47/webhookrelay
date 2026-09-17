@@ -41,11 +41,16 @@ This phase transitions the project from scaffolding to concrete engineering blue
    - Authored the **WebSocket Protocol Specification** ([`docs/api/ws-protocol.md`](../api/ws-protocol.md)) detailing JSON frame definitions (`HANDSHAKE`, `ACK`, `EVENT`, `REPLAY_RESULT`, `PING/PONG`, `ERROR`, `CLOSE`).
    - Installed `swagger-ui-express` & `swagger-jsdoc` and mounted interactive Swagger UI documentation at `/api/docs`.
 
-4. **Sequence Diagrams & Progress Reporting (Day 8)**:
-   - Authored **Signup & Endpoint Provisioning Sequence** (`docs/architecture/seq-signup.png`).
-   - Authored **Webhook Ingress to CLI Replay Sequence** (`docs/architecture/seq-ingest-replay.png`).
-   - Authored **UI Real-Time Dashboard Updates Sequence** (`docs/architecture/seq-realtime.png`).
-   - Compiled and finalized the **Week 2 Progress Report** (`docs/week-reports/week-02.md`).
+5. **Database Migration Tooling & Seed Data (Day 9)**:
+   - Installed `node-pg-migrate` and configured npm scripts: `npm run db:migrate`, `npm run db:rollback`, and `npm run db:seed`.
+   - Converted SQL migration definitions into ES Module scripts (`001_users.js` through `005_api_tokens.js`) supporting forward migrations and rollbacks.
+   - Authored database seed script ([`server/db/seed.js`](../../server/db/seed.js)) populating demo user, team subscription, API tokens, `stripe-demo` endpoint, webhook events, and replay logs.
+   - Built database connection helper ([`server/src/config/db.js`](../../server/src/config/db.js)) with `pg.Pool`, query execution logging, and `checkDbHealth()`.
+
+6. **Code Review, Documentation Audit & Week 3 Planning (Day 10)**:
+   - Executed full linting (`make lint`) across `cli`, `server`, and `web` with 0 warnings/errors.
+   - Completed documentation audit verifying cross-references across `README.md`, `docs/requirements.md`, `docs/api/`, and `docs/architecture/`.
+   - Formulated the detailed Week 3 implementation plan (`docs/week-reports/week-03-plan.md`).
 
 ---
 
@@ -56,76 +61,78 @@ This phase transitions the project from scaffolding to concrete engineering blue
 | **Architecture** | [`docs/architecture/system-overview.png`](../architecture/system-overview.png) | ✅ Completed | High-res System Architecture Diagram. |
 | **Data Flow** | [`docs/architecture/dfd.png`](../architecture/dfd.png) | ✅ Completed | Level 0 & Level 1 Data Flow Diagram (DFD). |
 | **Database ER** | [`docs/architecture/er-diagram.png`](../architecture/er-diagram.png) | ✅ Completed | Complete Entity-Relationship (ER) Diagram. |
-| **Migrations** | [`server/db/migrations/001-005.sql`](../../server/db/migrations/) | ✅ Completed | 5 SQL migration files verified against PostgreSQL 16. |
+| **Migrations** | [`server/db/migrations/001-005.js`](../../server/db/migrations/) | ✅ Completed | 5 `node-pg-migrate` ES Module migration files (`up`/`down`). |
+| **Seed Data** | [`server/db/seed.js`](../../server/db/seed.js) | ✅ Completed | Seed script populating demo user, endpoint, events & logs. |
+| **DB Helper** | [`server/src/config/db.js`](../../server/src/config/db.js) | ✅ Completed | Database pool helper with query timing & healthcheck. |
 | **REST API Spec** | [`docs/api/rest-spec.md`](../api/rest-spec.md) | ✅ Completed | 11 REST endpoint contracts with JSON schemas. |
 | **WS Protocol** | [`docs/api/ws-protocol.md`](../api/ws-protocol.md) | ✅ Completed | WebSocket JSON frame specification & error codes. |
 | **OpenAPI Docs** | [`server/src/config/swagger.js`](../../server/src/config/swagger.js) | ✅ Completed | Swagger UI interactive docs mounted at `/api/docs`. |
 | **Sequences** | [`docs/architecture/seq-*.png`](../architecture/) | ✅ Completed | 3 sequence diagrams (Signup, Ingest, Realtime). |
-| **Week Report** | [`docs/week-reports/week-02.md`](week-02.md) | ✅ Completed | Engineering progress report submitted to advisor. |
+| **Week 3 Plan** | [`docs/week-reports/week-03-plan.md`](week-03-plan.md) | ✅ Completed | 5-day task breakdown & technical research items for Week 3. |
+| **Week Report** | [`docs/week-reports/week-02.md`](week-02.md) | ✅ Completed | Finalized Week 2 progress report submitted to advisor. |
 
 ---
 
 ### Section 4: Code & Schema Verification
 
-#### 1. Database Migration Execution Log (PostgreSQL 16)
+#### 1. Database Migration Execution Log (`npm run db:migrate`)
 ```bash
-$ for f in server/db/migrations/*.sql; do docker exec -i webhookrelay-postgres-1 psql -U relay -d webhookrelay -f - < "$f"; done
-Executing server/db/migrations/001_users.sql...
-CREATE EXTENSION
-CREATE EXTENSION
-CREATE TABLE
-CREATE TABLE
-CREATE INDEX
-Executing server/db/migrations/002_endpoints.sql...
-CREATE TABLE
-CREATE INDEX
-Executing server/db/migrations/003_events.sql...
-CREATE TABLE
-CREATE INDEX
-Executing server/db/migrations/004_replay_logs.sql...
-CREATE TABLE
-CREATE INDEX
-Executing server/db/migrations/005_api_tokens.sql...
-CREATE TABLE
-CREATE INDEX
+$ npm run db:migrate
+> server@1.0.0 db:migrate
+> node -r dotenv/config ./node_modules/.bin/node-pg-migrate -m db/migrations up
+> Migrating files: 001_users, 002_endpoints, 003_events, 004_replay_logs, 005_api_tokens
+Migrations complete!
 ```
 
-#### 2. Monorepo Integration Test Suite (`make test`)
+#### 2. Seed Data Execution Log (`npm run db:seed`)
+```bash
+$ npm run db:seed
+🌱 Seeding WebhookRelay database...
+✅ Demo User created/updated with ID: dcfb8ded-f94a-4e0e-8035-b9e9c2e86c5d
+✅ Demo Subscription created (Team plan)
+✅ Demo API Token created
+✅ Demo Endpoint created/updated with ID: b025feaf-f45a-4d0a-a3d3-c20571c94365
+✅ Demo Events created (Stripe payment_intent & GitHub push)
+✅ Demo Replay Log created
+🚀 Database seeding completed successfully!
+```
+
+#### 3. Full Monorepo Test Execution (`make test`)
 ```bash
 $ make test
 cd cli && go test ./...
-ok      github.com/Ahsan-Qamar-47/webhookrelay/cli/cmd  0.004s
-ok      github.com/Ahsan-Qamar-47/webhookrelay/cli/internal/config      0.003s
-ok      github.com/Ahsan-Qamar-47/webhookrelay/cli/internal/ui  0.002s
+ok      github.com/Ahsan-Qamar-47/webhookrelay/cli/cmd  (cached)
+ok      github.com/Ahsan-Qamar-47/webhookrelay/cli/internal/config      (cached)
+ok      github.com/Ahsan-Qamar-47/webhookrelay/cli/internal/ui  (cached)
 cd server && npm test
-✔ health route status check (0.98ms)
-✔ GET /health returns 200 with ok status and X-Request-Id header (24.60ms)
-✔ POST /ingest/test-tunnel returns 202 accepted (3.63ms)
-✔ GET /unknown-route returns 404 JSON error response (2.18ms)
-✔ GET /api/docs/ serves Swagger UI documentation (3.28ms)
-ℹ tests 6 | pass 6 | fail 0 | duration_ms 294ms
+▶ Database Connection Helper Unit Tests
+  ✔ checkDbHealth returns healthy status and latency (30.4ms)
+  ✔ query helper executes SELECT query successfully (1.7ms)
+▶ Server middleware and routes
+  ✔ GET /health returns 200 with ok status and X-Request-Id header (39.3ms)
+  ✔ POST /ingest/test-tunnel returns 202 accepted (2.9ms)
+  ✔ GET /unknown-route returns 404 JSON error response (2.4ms)
+  ✔ GET /api/docs/ serves Swagger UI documentation (3.0ms)
+ℹ tests 9 | pass 9 | fail 0
 ```
 
 ---
 
 ### Section 5: Issues Encountered & Resolution
 
-1. **PostgreSQL JSONB Indexing Performance**:
-   - *Issue*: Efficiently querying arbitrary webhook payloads (`payload->>'amount'`) required specialized database index support.
-   - *Resolution*: Added Generalized Inverted Indexes (`GIN`) on `payload` and `headers` JSONB columns in `003_events.sql`.
+1. **PostgreSQL Container Port Conflict**:
+   - *Issue*: Local OS PostgreSQL daemon was already listening on port 5432, preventing Docker container port binding.
+   - *Resolution*: Updated `docker-compose.yml` and `.env` `DATABASE_URL` to map PostgreSQL container to port `5434`.
 
-2. **Swagger UI HTML Content Response Handling**:
-   - *Issue*: Automated test runner attempted `JSON.parse` on `/api/docs/` HTML responses.
-   - *Resolution*: Updated test client helper in `server/test/server.test.js` with fallback text parsing for HTML streams.
+2. **Database Migration Rollback Tooling**:
+   - *Issue*: Plain SQL scripts lacked automated rollback (`down`) capabilities.
+   - *Resolution*: Installed `node-pg-migrate` and restructured migrations into ES Modules exposing `up` and `down` handlers.
 
 ---
 
 ### Section 6: Plan for Week 3
 
-In Week 3, development will focus on implementing backend REST API controllers, database persistence models, and WebSocket connection handlers:
-1. **User Auth & JWT Service**: Build `/api/auth/signup`, `/api/auth/login`, and JWT verification middleware.
-2. **Endpoint Provisioning Models**: Implement CRUD database query handlers for `endpoints` and `api_tokens`.
-3. **WebSocket Tunnel Gateway Engine**: Build full `ws/tunnel.js` connection handler enforcing `HANDSHAKE`, `ACK`, and `EVENT` framing over Redis Pub/Sub channels.
+In Week 3, development will focus on core authentication services, endpoint CRUD handlers, and WebSocket tunnel engine implementation. See [`docs/week-reports/week-03-plan.md`](week-03-plan.md) for full details.
 
 ---
 
@@ -135,8 +142,10 @@ In Week 3, development will focus on implementing backend REST API controllers, 
 | :--- | :--- | :--- | :---: |
 | **Day 6** | **Architecture & DB Schema** | System Architecture Diagram, DFD (2 levels), ER Diagram, 5 SQL Migrations | 8.0 |
 | **Day 7** | **API Specs & Swagger** | REST API Spec (11 endpoints), WS Protocol Spec, Swagger UI setup (`/api/docs`) | 8.0 |
-| **Day 8** | **Sequence Diagrams & Report**| 3 Sequence Diagrams (Signup, Ingest, Realtime), Week 2 Report (`week-02.md`) | 8.0 |
-| **Total** | **Week 2 Total** | **Architecture, Specification & Documentation Phase** | **24.0 Hours** |
+| **Day 8** | **Sequence Diagrams** | 3 Sequence Diagrams (Signup, Ingest, Realtime) | 8.0 |
+| **Day 9** | **DB Migration Tooling** | `node-pg-migrate` setup, `db:seed` script, `db.js` pool helper | 8.0 |
+| **Day 10**| **Audit & Sprint Review** | Linting pass, documentation audit, Week 2 report, Week 3 plan | 8.0 |
+| **Total** | **Week 2 Total** | **Architecture, Specification & Migration Tooling Phase** | **40.0 Hours** |
 
 ---
 

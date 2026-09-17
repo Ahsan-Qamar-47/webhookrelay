@@ -144,6 +144,9 @@ make install
 
 # Start PostgreSQL and Redis infrastructure containers
 make db
+
+# Execute database migrations & load seed data
+cd server && npm run db:migrate && npm run db:seed && cd ..
 ```
 
 ### 2. Build & Run Components
