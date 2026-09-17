@@ -1,0 +1,52 @@
+
+digraph SeqIngestReplay {
+    graph [
+        rankdir=TB,
+        splines=ortho,
+        nodesep=0.5,
+        ranksep=0.6,
+        bgcolor="#0F172A",
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=14,
+        fontcolor="#F8FAFC",
+        pad="0.5",
+        dpi=300
+    ];
+    node [
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=10,
+        shape=rect,
+        style="filled,rounded",
+        color="#334155",
+        penwidth=1.5,
+        margin="0.2,0.1"
+    ];
+    edge [
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=8,
+        fontcolor="#94A3B8",
+        color="#38BDF8",
+        penwidth=1.5,
+        arrowsize=0.8
+    ];
+
+    // Participants
+    provider [label="Webhook Provider\n(Stripe / GitHub)", fillcolor="#78350F", fontcolor="#FDE68A", color="#F59E0B"];
+    server [label="Gateway Server\n(:8080 / :8081)", fillcolor="#1E3A8A", fontcolor="#93C5FD", color="#3B82F6"];
+    postgres [label="PostgreSQL 16\n(Events & Logs)", fillcolor="#0F172A", fontcolor="#34D399", color="#10B981"];
+    redis [label="Redis 7\n(Pub/Sub Broker)", fillcolor="#7F1D1D", fontcolor="#FCA5A5", color="#EF4444"];
+    cli [label="Go CLI Client\n(relay connect)", fillcolor="#065F46", fontcolor="#A7F3D0", color="#10B981"];
+    localhost [label="Localhost App\n(:3000)", fillcolor="#581C87", fontcolor="#E9D5FF", color="#A855F7"];
+
+    // Sequence Steps
+    provider -> server [label=" 1. HTTP POST /ingest/stripe-checkout ", color="#F59E0B"];
+    server -> postgres [label=" 2. Async Insert Event (status: pending) ", color="#3B82F6"];
+    server -> redis [label=" 3. PUBLISH tunnel:stripe-checkout envelope ", color="#EF4444"];
+    redis -> server [label=" 4. Pub/Sub Message Fanout ", color="#EF4444"];
+    server -> cli [label=" 5. WS EVENT Frame (headers, payload) ", color="#A855F7"];
+    cli -> localhost [label=" 6. HTTP POST http://localhost:3000/api/webhooks ", color="#10B981"];
+    localhost -> cli [label=" 7. HTTP 200 OK (response body) ", color="#10B981", style=dashed];
+    cli -> server [label=" 8. WS REPLAY_RESULT Frame (status, latency) ", color="#A855F7"];
+    server -> postgres [label=" 9. Update Event (status: relayed, latency_ms) ", color="#3B82F6"];
+    server -> provider [label=" 10. HTTP 202 Accepted Response ", color="#F59E0B", style=dashed];
+}

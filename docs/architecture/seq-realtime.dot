@@ -1,0 +1,48 @@
+
+digraph SeqRealtime {
+    graph [
+        rankdir=TB,
+        splines=ortho,
+        nodesep=0.5,
+        ranksep=0.6,
+        bgcolor="#0F172A",
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=14,
+        fontcolor="#F8FAFC",
+        pad="0.5",
+        dpi=300
+    ];
+    node [
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=10,
+        shape=rect,
+        style="filled,rounded",
+        color="#334155",
+        penwidth=1.5,
+        margin="0.2,0.1"
+    ];
+    edge [
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=8,
+        fontcolor="#94A3B8",
+        color="#38BDF8",
+        penwidth=1.5,
+        arrowsize=0.8
+    ];
+
+    // Participants
+    user_browser [label="User Browser\n(React Dashboard)", fillcolor="#831843", fontcolor="#FBCFE8", color="#EC4899"];
+    server_ws [label="WebSocket Server\n(Port 8081)", fillcolor="#1E3A8A", fontcolor="#93C5FD", color="#3B82F6"];
+    redis_pubsub [label="Redis 7 Pub/Sub\n(Event Channel)", fillcolor="#7F1D1D", fontcolor="#FCA5A5", color="#EF4444"];
+
+    // Sequence Steps
+    user_browser -> server_ws [label=" 1. Connect WSS ws://localhost:8081/ws/dashboard ", color="#EC4899"];
+    server_ws -> user_browser [label=" 2. WS Connection Established ", color="#EC4899", style=dashed];
+    user_browser -> server_ws [label=" 3. Send SUBSCRIBE_TUNNEL (subdomain: stripe-checkout) ", color="#EC4899"];
+    server_ws -> redis_pubsub [label=" 4. SUBSCRIBE channel:tunnel:stripe-checkout ", color="#EF4444"];
+    redis_pubsub -> server_ws [label=" 5. Redis Channel Subscription Active ", color="#EF4444", style=dashed];
+    
+    redis_pubsub -> server_ws [label=" 6. PUBLISH incoming webhook event ", color="#EF4444"];
+    server_ws -> user_browser [label=" 7. WS Broadcast WEBHOOK_RECEIVED Frame ", color="#A855F7"];
+    user_browser -> user_browser [label=" 8. Prepend Event to Feed & Update Charts ", color="#10B981"];
+}

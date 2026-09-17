@@ -1,0 +1,55 @@
+
+digraph SeqSignup {
+    graph [
+        rankdir=TB,
+        splines=ortho,
+        nodesep=0.5,
+        ranksep=0.6,
+        bgcolor="#0F172A",
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=14,
+        fontcolor="#F8FAFC",
+        pad="0.5",
+        dpi=300
+    ];
+    node [
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=10,
+        shape=rect,
+        style="filled,rounded",
+        color="#334155",
+        penwidth=1.5,
+        margin="0.2,0.1"
+    ];
+    edge [
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=8,
+        fontcolor="#94A3B8",
+        color="#38BDF8",
+        penwidth=1.5,
+        arrowsize=0.8
+    ];
+
+    // Participants
+    user [label="User / Developer\n(Browser)", fillcolor="#1E3A8A", fontcolor="#93C5FD", color="#3B82F6"];
+    web_ui [label="React Web UI\n(Dashboard)", fillcolor="#831843", fontcolor="#FBCFE8", color="#EC4899"];
+    server [label="Express Server\n(REST Gateway)", fillcolor="#0F172A", fontcolor="#60A5FA", color="#3B82F6"];
+    postgres [label="PostgreSQL 16\n(Users & Endpoints)", fillcolor="#0F172A", fontcolor="#34D399", color="#10B981"];
+    email_svc [label="Email Service\n(SMTP / Mailpit)", fillcolor="#78350F", fontcolor="#FDE68A", color="#F59E0B"];
+
+    // Sequence Steps
+    user -> web_ui [label=" 1. Submit Signup Form (Email, Password) "];
+    web_ui -> server [label=" 2. POST /api/auth/signup "];
+    server -> server [label=" 3. Validate Input & Hash Password "];
+    server -> postgres [label=" 4. INSERT INTO users & subscriptions "];
+    postgres -> server [label=" 5. User Record Created (UUID) "];
+    server -> email_svc [label=" 6. Trigger Verification Email "];
+    server -> web_ui [label=" 7. Return 201 Created & JWT Token "];
+    
+    user -> web_ui [label=" 8. Submit Provision Endpoint Form "];
+    web_ui -> server [label=" 9. POST /api/endpoints (subdomain) ", color="#A855F7"];
+    server -> postgres [label=" 10. INSERT INTO endpoints ", color="#A855F7"];
+    postgres -> server [label=" 11. Endpoint Provisioned ", color="#A855F7"];
+    server -> web_ui [label=" 12. Return 201 & Public Ingest URL ", color="#A855F7"];
+    web_ui -> user [label=" 13. Render Dashboard with Ingest URL ", color="#10B981"];
+}

@@ -12,10 +12,17 @@ A high-performance, developer-first, self-hostable webhook tunneling and inspect
 
 ![System Architecture Overview](docs/architecture/system-overview.png)
 
-### 📐 Detailed Architectural Diagrams
+### 📐 Detailed Architectural & Protocol Specifications
 
+- **[System Overview Architecture](docs/architecture/system-overview.png)**
 - **[Data Flow Diagram (Level 0 & 1)](docs/architecture/dfd.png)**
 - **[Database Entity-Relationship (ER) Diagram](docs/architecture/er-diagram.png)**
+- **[Signup & Endpoint Provisioning Sequence Diagram](docs/architecture/seq-signup.png)**
+- **[Webhook Ingress to CLI Replay Sequence Diagram](docs/architecture/seq-ingest-replay.png)**
+- **[UI Real-time Dashboard Updates Sequence Diagram](docs/architecture/seq-realtime.png)**
+- **[REST API Specification](docs/api/rest-spec.md)**
+- **[WebSocket Protocol Specification](docs/api/ws-protocol.md)**
+- **[Interactive OpenAPI/Swagger UI](http://localhost:8080/api/docs)**
 
 ```
                           +-------------------------+
@@ -89,13 +96,20 @@ webhookrelay/
 │   ├── cmd/                # Cobra commands (root, connect, version)
 │   ├── go.mod              # Go module definition
 │   └── main.go             # CLI entrypoint
-├── docs/                   # Documentation & Reports
-│   ├── requirements.md     # Software Requirements Specification (SRS)
+├── docs/                   # Documentation, Specifications & Reports
+│   ├── api/                # REST & WebSocket protocol specs
+│   │   ├── rest-spec.md    # REST API contracts (11 endpoints)
+│   │   └── ws-protocol.md  # WebSocket framing protocol specification
+│   ├── architecture/       # System diagrams & sequence flows
 │   └── week-reports/       # Weekly progress engineering reports
-│       └── week-01.md      # Week 1 completion report
+│       ├── week-01.md      # Week 1 completion report
+│       └── week-02.md      # Week 2 completion report
 ├── server/                 # Node.js Express & WebSocket Gateway
+│   ├── db/
+│   │   └── migrations/     # PostgreSQL 16 schema SQL migrations (001-005)
 │   ├── src/
-│   │   ├── routes/         # HTTP API routes (/health, /ingest)
+│   │   ├── config/         # App configuration & OpenAPI Swagger setup
+│   │   ├── routes/         # HTTP API routes (/health, /ingest, /api/docs)
 │   │   ├── ws/             # WebSocket tunnel connection handler
 │   │   └── index.js        # Express & WS server entrypoint
 │   ├── test/               # Node test suites
