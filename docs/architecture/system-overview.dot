@@ -1,0 +1,166 @@
+
+digraph SystemOverview {
+    graph [
+        rankdir=LR,
+        splines=ortho,
+        nodesep=0.7,
+        ranksep=0.9,
+        bgcolor="#0F172A",
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=14,
+        fontcolor="#F8FAFC",
+        pad="0.5",
+        dpi=300
+    ];
+    node [
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=11,
+        shape=rect,
+        style="filled,rounded",
+        color="#334155",
+        penwidth=1.5,
+        margin="0.2,0.15"
+    ];
+    edge [
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=9,
+        fontcolor="#94A3B8",
+        color="#38BDF8",
+        penwidth=1.8,
+        arrowsize=0.8
+    ];
+
+    // External Webhook Providers
+    subgraph cluster_providers {
+        label="Webhook Providers";
+        style="filled,rounded";
+        bgcolor="#1E293B";
+        color="#475569";
+        fontcolor="#38BDF8";
+        fontname="Arial Bold";
+
+        provider [
+            label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="4">
+                <TR><TD><FONT POINT-SIZE="13" COLOR="#F59E0B"><B>⚡ Webhook Providers</B></FONT></TD></TR>
+                <TR><TD><FONT POINT-SIZE="10" COLOR="#CBD5E1">Stripe, GitHub, Shopify, Twilio</FONT></TD></TR>
+            </TABLE>>,
+            fillcolor="#334155",
+            color="#F59E0B"
+        ];
+    }
+
+    // Backend Gateway Server
+    subgraph cluster_server {
+        label="WebhookRelay Gateway Server (Node.js 24 / Express)";
+        style="filled,rounded";
+        bgcolor="#1E293B";
+        color="#3B82F6";
+        fontcolor="#60A5FA";
+        fontname="Arial Bold";
+
+        http_gateway [
+            label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="4">
+                <TR><TD><FONT POINT-SIZE="12" COLOR="#60A5FA"><B>Express HTTP Gateway</B></FONT></TD></TR>
+                <TR><TD><FONT POINT-SIZE="10" COLOR="#CBD5E1">Port 8080 | /ingest/:tunnelId</FONT></TD></TR>
+            </TABLE>>,
+            fillcolor="#0F172A",
+            color="#3B82F6"
+        ];
+
+        ws_server [
+            label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="4">
+                <TR><TD><FONT POINT-SIZE="12" COLOR="#A855F7"><B>WebSocket Server</B></FONT></TD></TR>
+                <TR><TD><FONT POINT-SIZE="10" COLOR="#CBD5E1">Port 8081 | WSS Streaming</FONT></TD></TR>
+            </TABLE>>,
+            fillcolor="#0F172A",
+            color="#A855F7"
+        ];
+    }
+
+    // Storage & Message Layer
+    subgraph cluster_storage {
+        label="Data & Messaging Infrastructure";
+        style="filled,rounded";
+        bgcolor="#1E293B";
+        color="#10B981";
+        fontcolor="#34D399";
+        fontname="Arial Bold";
+
+        redis [
+            label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="4">
+                <TR><TD><FONT POINT-SIZE="12" COLOR="#EF4444"><B>Redis 7 Pub/Sub</B></FONT></TD></TR>
+                <TR><TD><FONT POINT-SIZE="10" COLOR="#CBD5E1">Message Broker &amp; Tunnel Dispatch</FONT></TD></TR>
+            </TABLE>>,
+            fillcolor="#0F172A",
+            color="#EF4444"
+        ];
+
+        postgres [
+            label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="4">
+                <TR><TD><FONT POINT-SIZE="12" COLOR="#3B82F6"><B>PostgreSQL 16</B></FONT></TD></TR>
+                <TR><TD><FONT POINT-SIZE="10" COLOR="#CBD5E1">Audit Logs, Events, Users, Tokens</FONT></TD></TR>
+            </TABLE>>,
+            fillcolor="#0F172A",
+            color="#3B82F6"
+        ];
+    }
+
+    // Local Developer Environment
+    subgraph cluster_cli_env {
+        label="Developer Local Environment";
+        style="filled,rounded";
+        bgcolor="#1E293B";
+        color="#10B981";
+        fontcolor="#34D399";
+        fontname="Arial Bold";
+
+        cli [
+            label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="4">
+                <TR><TD><FONT POINT-SIZE="12" COLOR="#10B981"><B>Go CLI Client</B></FONT></TD></TR>
+                <TR><TD><FONT POINT-SIZE="10" COLOR="#CBD5E1">relay connect --port 3000</FONT></TD></TR>
+            </TABLE>>,
+            fillcolor="#0F172A",
+            color="#10B981"
+        ];
+
+        localhost [
+            label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="4">
+                <TR><TD><FONT POINT-SIZE="12" COLOR="#F59E0B"><B>Localhost App</B></FONT></TD></TR>
+                <TR><TD><FONT POINT-SIZE="10" COLOR="#CBD5E1">http://localhost:3000</FONT></TD></TR>
+            </TABLE>>,
+            fillcolor="#0F172A",
+            color="#F59E0B"
+        ];
+    }
+
+    // Web Dashboard UI
+    subgraph cluster_web {
+        label="Frontend Client";
+        style="filled,rounded";
+        bgcolor="#1E293B";
+        color="#EC4899";
+        fontcolor="#F472B6";
+        fontname="Arial Bold";
+
+        web_ui [
+            label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="4">
+                <TR><TD><FONT POINT-SIZE="12" COLOR="#EC4899"><B>React Dashboard Web UI</B></FONT></TD></TR>
+                <TR><TD><FONT POINT-SIZE="10" COLOR="#CBD5E1">Inspection, Filtering &amp; Replay</FONT></TD></TR>
+            </TABLE>>,
+            fillcolor="#0F172A",
+            color="#EC4899"
+        ];
+    }
+
+    // Connections
+    provider -> http_gateway [label=" HTTP POST /ingest/:id ", color="#F59E0B"];
+    http_gateway -> redis [label=" Publish Webhook ", color="#EF4444"];
+    http_gateway -> postgres [label=" Async Audit Log ", color="#3B82F6"];
+    redis -> ws_server [label=" Pub/Sub Event ", color="#EF4444"];
+    ws_server -> cli [label=" WSS Tunnel Relay ", color="#A855F7", dir=both];
+    cli -> localhost [label=" HTTP Forward ", color="#10B981"];
+    localhost -> cli [label=" HTTP Response ", color="#10B981", style=dashed];
+
+    web_ui -> http_gateway [label=" REST API (Replay & Mgmt) ", color="#EC4899", dir=both];
+    ws_server -> web_ui [label=" WS Live Feed ", color="#A855F7"];
+}

@@ -1,0 +1,115 @@
+
+digraph ERDiagram {
+    graph [
+        rankdir=LR,
+        splines=ortho,
+        nodesep=0.7,
+        ranksep=1.0,
+        bgcolor="#0F172A",
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=14,
+        fontcolor="#F8FAFC",
+        pad="0.5",
+        dpi=300
+    ];
+    node [
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=10,
+        shape=none,
+        margin=0
+    ];
+    edge [
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=9,
+        fontcolor="#94A3B8",
+        color="#38BDF8",
+        penwidth=1.5,
+        arrowsize=0.8
+    ];
+
+    // USERS Table
+    users [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" COLOR="#3B82F6" BGCOLOR="#0F172A">
+        <TR><TD BGCOLOR="#1E3A8A" COLSPAN="3"><FONT COLOR="#93C5FD"><B>USERS</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><FONT COLOR="#F59E0B">PK</FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">UUID</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">email</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">VARCHAR(255)</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">password_hash</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">VARCHAR(255)</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">name</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">VARCHAR(255)</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">role</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">VARCHAR(50)</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">TIMESTAMPTZ</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">updated_at</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">TIMESTAMPTZ</FONT></TD></TR>
+    </TABLE>>];
+
+    // SUBSCRIPTIONS Table
+    subscriptions [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" COLOR="#10B981" BGCOLOR="#0F172A">
+        <TR><TD BGCOLOR="#065F46" COLSPAN="3"><FONT COLOR="#A7F3D0"><B>SUBSCRIPTIONS</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><FONT COLOR="#F59E0B">PK</FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">UUID</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><FONT COLOR="#60A5FA">FK</FONT></TD><TD ALIGN="LEFT"><B>user_id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">UUID</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">plan</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">VARCHAR(50)</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">status</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">VARCHAR(50)</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">current_period_start</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">TIMESTAMPTZ</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">current_period_end</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">TIMESTAMPTZ</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">TIMESTAMPTZ</FONT></TD></TR>
+    </TABLE>>];
+
+    // API_TOKENS Table
+    api_tokens [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" COLOR="#A855F7" BGCOLOR="#0F172A">
+        <TR><TD BGCOLOR="#581C87" COLSPAN="3"><FONT COLOR="#E9D5FF"><B>API_TOKENS</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><FONT COLOR="#F59E0B">PK</FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">UUID</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><FONT COLOR="#60A5FA">FK</FONT></TD><TD ALIGN="LEFT"><B>user_id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">UUID</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">name</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">VARCHAR(255)</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">token_hash</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">VARCHAR(255)</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">last_used_at</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">TIMESTAMPTZ</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">expires_at</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">TIMESTAMPTZ</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">TIMESTAMPTZ</FONT></TD></TR>
+    </TABLE>>];
+
+    // ENDPOINTS Table
+    endpoints [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" COLOR="#F59E0B" BGCOLOR="#0F172A">
+        <TR><TD BGCOLOR="#78350F" COLSPAN="3"><FONT COLOR="#FDE68A"><B>ENDPOINTS (TUNNELS)</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><FONT COLOR="#F59E0B">PK</FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">UUID</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><FONT COLOR="#60A5FA">FK</FONT></TD><TD ALIGN="LEFT"><B>user_id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">UUID</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">subdomain</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">VARCHAR(100)</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">destination_url</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">VARCHAR(500)</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">secret</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">VARCHAR(255)</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">is_active</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">BOOLEAN</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">created_at</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">TIMESTAMPTZ</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">updated_at</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">TIMESTAMPTZ</FONT></TD></TR>
+    </TABLE>>];
+
+    // EVENTS Table
+    events [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" COLOR="#EF4444" BGCOLOR="#0F172A">
+        <TR><TD BGCOLOR="#7F1D1D" COLSPAN="3"><FONT COLOR="#FCA5A5"><B>EVENTS</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><FONT COLOR="#F59E0B">PK</FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">UUID</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><FONT COLOR="#60A5FA">FK</FONT></TD><TD ALIGN="LEFT"><B>endpoint_id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">UUID</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">event_id</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">VARCHAR(255)</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">provider</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">VARCHAR(100)</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">method</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">VARCHAR(10)</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">headers</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">JSONB</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">payload</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">JSONB</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">status</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">VARCHAR(50)</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">response_status</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">INTEGER</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">latency_ms</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">INTEGER</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">received_at</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">TIMESTAMPTZ</FONT></TD></TR>
+    </TABLE>>];
+
+    // REPLAY_LOGS Table
+    replay_logs [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" COLOR="#EC4899" BGCOLOR="#0F172A">
+        <TR><TD BGCOLOR="#831843" COLSPAN="3"><FONT COLOR="#FBCFE8"><B>REPLAY_LOGS</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><FONT COLOR="#F59E0B">PK</FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">UUID</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><FONT COLOR="#60A5FA">FK</FONT></TD><TD ALIGN="LEFT"><B>event_id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">UUID</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><FONT COLOR="#60A5FA">FK</FONT></TD><TD ALIGN="LEFT"><B>user_id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">UUID</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">target_url</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">VARCHAR(500)</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">status_code</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">INTEGER</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">response_body</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">TEXT</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">latency_ms</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">INTEGER</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"></TD><TD ALIGN="LEFT">replayed_at</TD><TD ALIGN="LEFT"><FONT COLOR="#94A3B8">TIMESTAMPTZ</FONT></TD></TR>
+    </TABLE>>];
+
+    // Relationships
+    users -> subscriptions [label=" 1 : 1 ", color="#10B981"];
+    users -> api_tokens [label=" 1 : N ", color="#A855F7"];
+    users -> endpoints [label=" 1 : N ", color="#F59E0B"];
+    endpoints -> events [label=" 1 : N ", color="#EF4444"];
+    events -> replay_logs [label=" 1 : N ", color="#EC4899"];
+    users -> replay_logs [label=" 1 : N ", color="#3B82F6", style=dashed];
+}

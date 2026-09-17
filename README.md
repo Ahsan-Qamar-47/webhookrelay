@@ -10,6 +10,13 @@ A high-performance, developer-first, self-hostable webhook tunneling and inspect
 
 ## 🏛️ Architecture Overview
 
+![System Architecture Overview](docs/architecture/system-overview.png)
+
+### 📐 Detailed Architectural Diagrams
+
+- **[Data Flow Diagram (Level 0 & 1)](docs/architecture/dfd.png)**
+- **[Database Entity-Relationship (ER) Diagram](docs/architecture/er-diagram.png)**
+
 ```
                           +-------------------------+
                           | Webhook Providers       |

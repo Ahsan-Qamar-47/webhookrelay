@@ -1,0 +1,109 @@
+
+digraph DataFlowDiagram {
+    graph [
+        rankdir=TB,
+        splines=ortho,
+        nodesep=0.6,
+        ranksep=0.8,
+        bgcolor="#0F172A",
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=14,
+        fontcolor="#F8FAFC",
+        pad="0.5",
+        dpi=300
+    ];
+    node [
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=10,
+        shape=rect,
+        style="filled,rounded",
+        color="#334155",
+        penwidth=1.5,
+        margin="0.2,0.1"
+    ];
+    edge [
+        fontname="Arial, Helvetica, sans-serif",
+        fontsize=8,
+        fontcolor="#94A3B8",
+        color="#38BDF8",
+        penwidth=1.5,
+        arrowsize=0.8
+    ];
+
+    // LEVEL 0 CONTEXT DIAGRAM
+    subgraph cluster_level0 {
+        label="Level 0: Context Diagram";
+        style="filled,rounded";
+        bgcolor="#1E293B";
+        color="#3B82F6";
+        fontcolor="#60A5FA";
+        fontname="Arial Bold";
+
+        ext_provider_l0 [label="External Entity:\nWebhook Provider", fillcolor="#D97706", fontcolor="#FFF", color="#F59E0B"];
+        sys_l0 [label="0.0 WebhookRelay System\n(Core Ingestion & Relaying)", fillcolor="#1E3A8A", fontcolor="#60A5FA", color="#3B82F6", shape=circle, width=2.2, height=2.2, margin=0];
+        ext_cli_user_l0 [label="External Entity:\nUser (Go CLI Client)", fillcolor="#065F46", fontcolor="#FFF", color="#10B981"];
+        ext_web_user_l0 [label="External Entity:\nUser (React Web UI)", fillcolor="#831843", fontcolor="#FFF", color="#EC4899"];
+
+        ext_provider_l0 -> sys_l0 [label=" Webhook POST Payload "];
+        sys_l0 -> ext_cli_user_l0 [label=" Relayed Webhook Event "];
+        ext_cli_user_l0 -> sys_l0 [label=" Auth Token & Local Response "];
+        sys_l0 -> ext_web_user_l0 [label=" Live Event Stream & Metrics "];
+        ext_web_user_l0 -> sys_l0 [label=" REST Management & Replay "];
+    }
+
+    // LEVEL 1 PROCESS BREAKDOWN
+    subgraph cluster_level1 {
+        label="Level 1: Process Breakdown & Data Stores";
+        style="filled,rounded";
+        bgcolor="#1E293B";
+        color="#10B981";
+        fontcolor="#34D399";
+        fontname="Arial Bold";
+
+        // External Entities
+        ext_provider [label="Provider\n(Stripe/GitHub)", fillcolor="#D97706", fontcolor="#FFF", color="#F59E0B"];
+        ext_cli [label="User (CLI)", fillcolor="#065F46", fontcolor="#FFF", color="#10B981"];
+        ext_web [label="User (Web)", fillcolor="#831843", fontcolor="#FFF", color="#EC4899"];
+
+        // Processes (Circles)
+        p1 [label="1.0 Auth & Tunnel\nManagement", shape=ellipse, fillcolor="#0F172A", color="#3B82F6", fontcolor="#93C5FD"];
+        p2 [label="2.0 Webhook\nIngestion", shape=ellipse, fillcolor="#0F172A", color="#F59E0B", fontcolor="#FDE68A"];
+        p3 [label="3.0 Store &\nPublish Event", shape=ellipse, fillcolor="#0F172A", color="#EF4444", fontcolor="#FCA5A5"];
+        p4 [label="4.0 Relay via\nWebSocket", shape=ellipse, fillcolor="#0F172A", color="#A855F7", fontcolor="#E9D5FF"];
+        p5 [label="5.0 Local Forward\n& Response Proxy", shape=ellipse, fillcolor="#0F172A", color="#10B981", fontcolor="#A7F3D0"];
+        p6 [label="6.0 Dashboard Stream\n& Event Replay", shape=ellipse, fillcolor="#0F172A", color="#EC4899", fontcolor="#FBCFE8"];
+
+        // Data Stores (Open rects / stylized)
+        d1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" COLOR="#3B82F6" BGCOLOR="#0F172A">
+            <TR><TD BGCOLOR="#1E3A8A"><FONT COLOR="#93C5FD"><B>D1</B></FONT></TD><TD><FONT COLOR="#F8FAFC"><B>PostgreSQL Database</B><BR/>Users, Endpoints, Events, Logs, Tokens</FONT></TD></TR>
+        </TABLE>>, shape=none, margin=0];
+
+        d2 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" COLOR="#EF4444" BGCOLOR="#0F172A">
+            <TR><TD BGCOLOR="#7F1D1D"><FONT COLOR="#FCA5A5"><B>D2</B></FONT></TD><TD><FONT COLOR="#F8FAFC"><B>Redis Pub/Sub &amp; Sessions</B><BR/>Active Tunnel Channels &amp; Cache</FONT></TD></TR>
+        </TABLE>>, shape=none, margin=0];
+
+        // Level 1 Flows
+        ext_cli -> p1 [label=" API Token / Auth "];
+        p1 -> d1 [label=" Validate Token & Endpoint "];
+        p1 -> d2 [label=" Register Active Session "];
+
+        ext_provider -> p2 [label=" HTTP POST Webhook "];
+        p2 -> p3 [label=" Standardized Envelope "];
+
+        p3 -> d1 [label=" Insert Event Record "];
+        p3 -> d2 [label=" Publish to Tunnel Channel "];
+
+        d2 -> p4 [label=" Pub/Sub Dispatch "];
+        p4 -> ext_cli [label=" WSS Stream Envelope "];
+
+        ext_cli -> p5 [label=" Dispatch to Localhost "];
+        p5 -> d1 [label=" Log Response & Latency "];
+        p5 -> ext_provider [label=" HTTP Status Return "];
+
+        p4 -> p6 [label=" Real-time Event Feed "];
+        p6 -> ext_web [label=" Render Live Stream "];
+        ext_web -> p6 [label=" Replay Event Request "];
+        p6 -> d1 [label=" Fetch Original Event Payload "];
+        p6 -> p2 [label=" Re-inject Event "];
+    }
+}
