@@ -10,10 +10,18 @@ function request(server, path, options = {}) {
       let data = '';
       res.on('data', (chunk) => { data += chunk; });
       res.on('end', () => {
+        let parsed = null;
+        if (data) {
+          try {
+            parsed = JSON.parse(data);
+          } catch {
+            parsed = data;
+          }
+        }
         resolve({
           status: res.statusCode,
           headers: res.headers,
-          body: data ? JSON.parse(data) : null,
+          body: parsed,
         });
       });
     });
@@ -53,5 +61,10 @@ test('Server middleware and routes', async (t) => {
     assert.strictEqual(res.status, 404);
     assert.strictEqual(res.body.error, 'Not Found');
     assert.strictEqual(res.body.path, '/unknown-route');
+  });
+
+  await t.test('GET /api/docs/ serves Swagger UI documentation', async () => {
+    const res = await request(server, '/api/docs/');
+    assert.ok(res.status === 200 || res.status === 301);
   });
 });
