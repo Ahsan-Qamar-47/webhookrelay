@@ -6,7 +6,10 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "lint": "eslint .",
-    "test": "NODE_ENV=test node --test"
+    "test": "NODE_ENV=test node --test",
+    "db:migrate": "node -r dotenv/config ./node_modules/.bin/node-pg-migrate -m db/migrations up",
+    "db:rollback": "node -r dotenv/config ./node_modules/.bin/node-pg-migrate -m db/migrations down",
+    "db:seed": "node -r dotenv/config db/seed.js"
   },
   "dependencies": {
     "cors": "^2.8.6",
@@ -14,6 +17,7 @@
     "express": "^5.2.1",
     "ioredis": "^6.0.0",
     "morgan": "^1.12.1",
+    "node-pg-migrate": "^9.0.0",
     "pg": "^8.23.0",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",

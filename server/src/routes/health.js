@@ -1,11 +1,14 @@
 import { Router } from 'express';
+import { checkDbHealth } from '../config/db.js';
 
 const router = Router();
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
+  const dbHealth = await checkDbHealth();
   res.status(200).json({
     status: 'ok',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    db: dbHealth,
   });
 });
 
