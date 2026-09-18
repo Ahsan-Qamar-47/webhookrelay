@@ -59,6 +59,8 @@ test('Endpoints & Tokens Integration Tests (Supertest)', async (t) => {
     const oldRes = await request(app)
       .get(`/api/endpoints/${endpointId}`)
       .set('Authorization', `Bearer ${token}`);
+    assert.strictEqual(oldRes.status, 200);
+    assert.ok(oldRes.body && oldRes.body.data, 'Endpoint data should exist');
     const oldSubdomain = oldRes.body.data.subdomain;
 
     const res = await request(app)

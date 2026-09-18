@@ -42,6 +42,8 @@ test('Ingest -> PG -> Redis -> WebSocket E2E Integration Tests', async (t) => {
 
   // 3. Connect WebSocket & Handshake
   await t.test('WebSocket HANDSHAKE and ACK framing', async () => {
+    assert.ok(userToken, 'userToken must be set from setup step');
+    assert.ok(subdomain, 'subdomain must be set from setup step');
     const client = new WebSocket(`ws://localhost:${wsPort}`);
 
     await new Promise((resolve, reject) => {

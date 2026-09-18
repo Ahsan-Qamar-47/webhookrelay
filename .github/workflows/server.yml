@@ -60,6 +60,19 @@ jobs:
           cd server
           npm run lint
 
+      - name: Run database migrations and seed
+        run: |
+          cd server
+          npm run db:migrate
+          npm run db:seed
+        env:
+          DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/webhookrelay
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: webhookrelay
+
       - name: Run tests
         run: |
           cd server
@@ -73,3 +86,4 @@ jobs:
           POSTGRES_DB: webhookrelay
           REDIS_HOST: localhost
           REDIS_PORT: 6379
+          JWT_SECRET: webhookrelay_jwt_secret_dev_key_2026
