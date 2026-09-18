@@ -1,10 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import http from 'node:http';
 import { WebSocketServer, WebSocket } from 'ws';
 import request from 'supertest';
 import app from '../src/app.js';
-import setupTunnel, { registry } from '../src/ws/tunnel.js';
+import setupTunnel from '../src/ws/tunnel.js';
 import { closeRedis } from '../src/config/redis.js';
 
 test('Ingest -> PG -> Redis -> WebSocket E2E Integration Tests', async (t) => {
@@ -77,8 +76,6 @@ test('Ingest -> PG -> Redis -> WebSocket E2E Integration Tests', async (t) => {
     const client = new WebSocket(`ws://localhost:${wsPort}`);
 
     await new Promise((resolve, reject) => {
-      let eventReceived = false;
-
       client.on('open', () => {
         // Send Handshake
         client.send(JSON.stringify({
@@ -101,7 +98,6 @@ test('Ingest -> PG -> Redis -> WebSocket E2E Integration Tests', async (t) => {
             .send({ id: 'evt_stripe_test_100', amount: 9900, currency: 'usd' })
             .expect(202);
         } else if (msg.type === 'EVENT') {
-          eventReceived = true;
           assert.strictEqual(msg.payload.subdomain, subdomain);
           assert.strictEqual(msg.payload.body.amount, 9900);
 
