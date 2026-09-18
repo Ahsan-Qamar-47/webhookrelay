@@ -14,6 +14,8 @@ import { getMe } from './controllers/authController.js';
 import healthRoutes from './routes/health.js';
 import ingestRoutes from './routes/ingest.js';
 import authRoutes from './routes/auth.js';
+import endpointRoutes from './routes/endpoints.js';
+import tokenRoutes from './routes/tokens.js';
 
 const app = express();
 
@@ -29,6 +31,8 @@ app.use('/health', healthRoutes);
 app.use('/ingest', ingestRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/me', authenticate, getMe);
+app.use('/api/endpoints', endpointRoutes);
+app.use('/api/tokens', tokenRoutes);
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(notFoundHandler);
