@@ -1,15 +1,9 @@
 import { Router } from 'express';
+import { handleIngest } from '../controllers/ingestController.js';
 
 const router = Router();
 
-router.post('/:tunnelId', (req, res) => {
-  const { tunnelId } = req.params;
-
-  // TODO: Publish to Redis or push to WS directly
-  res.status(202).json({
-    message: 'Webhook received',
-    tunnelId
-  });
-});
+// Support all standard HTTP verbs (POST, GET, PUT, PATCH, DELETE) at /ingest/:tunnelId
+router.all('/:tunnelId', handleIngest);
 
 export default router;

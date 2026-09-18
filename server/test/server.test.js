@@ -49,10 +49,10 @@ test('Server middleware and routes', async (t) => {
     assert.ok(res.headers['x-request-id']);
   });
 
-  await t.test('POST /ingest/test-tunnel returns 202 accepted', async () => {
-    const res = await request(server, '/ingest/test-tunnel', { method: 'POST' });
+  await t.test('POST /ingest/stripe-demo returns 202 accepted', async () => {
+    const res = await request(server, '/ingest/stripe-demo', { method: 'POST' });
     assert.strictEqual(res.status, 202);
-    assert.strictEqual(res.body.tunnelId, 'test-tunnel');
+    assert.strictEqual(res.body.tunnelId, 'stripe-demo');
     assert.strictEqual(res.body.message, 'Webhook received');
   });
 
