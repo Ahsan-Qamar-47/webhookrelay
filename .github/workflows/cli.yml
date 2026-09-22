@@ -1,18 +1,20 @@
-name: Go CLI CI
+name: Go CLI CI & Release
 
 on:
   push:
     paths:
       - 'cli/**'
       - '.github/workflows/cli.yml'
+    tags:
+      - 'v*'
   pull_request:
     paths:
       - 'cli/**'
       - '.github/workflows/cli.yml'
 
 jobs:
-  build-and-test:
-    name: Build & Test CLI
+  test:
+    name: Lint & Test CLI
     runs-on: ubuntu-latest
 
     steps:
@@ -37,18 +39,53 @@ jobs:
           cd cli
           go vet ./...
 
-      - name: Run tests with race detection
+      - name: Run tests with race detection & coverage
         run: |
           cd cli
-          go test -v -race ./...
+          go test -v -race -coverprofile=coverage.out ./...
 
-      - name: Build CLI binary
-        run: |
-          cd cli
-          go build -v -o bin/relay main.go
-
-      - name: Upload CLI build artifact
+      - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:
-          name: relay-cli-linux-amd64
-          path: cli/bin/relay
+          name: cli-coverage-report
+          path: cli/coverage.out
+
+  build-matrix:
+    name: Multi-Platform Build (${{ matrix.goos }}/${{ matrix.goarch }})
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            binary_name: relay-linux-amd64
+          - goos: darwin
+            goarch: amd64
+            binary_name: relay-darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            binary_name: relay-darwin-arm64
+          - goos: windows
+            goarch: amd64
+            binary_name: relay-windows-amd64.exe
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Build Binary
+        run: |
+          cd cli
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -v -o bin/${{ matrix.binary_name }} main.go
+
+      - name: Upload Platform Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.binary_name }}
+          path: cli/bin/${{ matrix.binary_name }}

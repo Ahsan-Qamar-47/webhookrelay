@@ -12,7 +12,7 @@ on:
 
 jobs:
   test:
-    name: Lint & Test Server
+    name: Lint, Integration Test & Coverage
     runs-on: ubuntu-latest
 
     services:
@@ -73,7 +73,7 @@ jobs:
           POSTGRES_PASSWORD: postgrespassword
           POSTGRES_DB: webhookrelay
 
-      - name: Run tests
+      - name: Run test suite & integration tests
         run: |
           cd server
           npm test
@@ -87,3 +87,26 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           JWT_SECRET: webhookrelay_jwt_secret_dev_key_2026
+
+      - name: Run load benchmark test
+        run: |
+          cd server
+          node src/tests/load.js
+        env:
+          DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/webhookrelay
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: webhookrelay
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_SECRET: webhookrelay_jwt_secret_dev_key_2026
+
+      - name: Upload Server Logs Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-execution-logs
+          path: server/logs/
+          if-no-files-found: ignore
