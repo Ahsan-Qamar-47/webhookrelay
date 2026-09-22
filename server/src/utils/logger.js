@@ -1,57 +1,86 @@
-/**
- * Structured Logger utility for WebhookRelay
- */
+import winston from 'winston';
+import 'winston-daily-rotate-file';
+import path from 'node:path';
+import fs from 'node:fs';
 
-const LOG_LEVELS = {
-  error: 0,
-  warn: 1,
-  info: 2,
-  debug: 3,
-};
-
-const currentLevel = process.env.LOG_LEVEL ? LOG_LEVELS[process.env.LOG_LEVEL.toLowerCase()] || 2 : 2;
-
-function formatLog(level, message, meta = {}) {
-  const timestamp = new Date().toISOString();
-
-  // Standard JSON structured log format
-  if (process.env.LOG_FORMAT === 'json') {
-    return JSON.stringify({
-      timestamp,
-      level,
-      message,
-      ...meta,
-    });
-  }
-
-  // Readable structured log format for console/dev
-  const reqIdStr = meta.requestId ? ` [req:${meta.requestId}]` : '';
-  const eventIdStr = meta.eventId ? ` [evt:${meta.eventId}]` : '';
-  const metaStr = Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : '';
-  return `[${timestamp}] [${level.toUpperCase()}]${reqIdStr}${eventIdStr} ${message}${metaStr}`;
+const logsDir = path.resolve(process.cwd(), 'logs');
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir, { recursive: true });
 }
 
-export const logger = {
-  error(message, meta) {
-    if (LOG_LEVELS.error <= currentLevel) {
-      console.error(formatLog('error', message, meta));
-    }
+const customLevels = {
+  levels: {
+    error: 0,
+    warn: 1,
+    info: 2,
+    http: 3,
+    debug: 4,
   },
-  warn(message, meta) {
-    if (LOG_LEVELS.warn <= currentLevel) {
-      console.warn(formatLog('warn', message, meta));
-    }
-  },
-  info(message, meta) {
-    if (LOG_LEVELS.info <= currentLevel) {
-      console.log(formatLog('info', message, meta));
-    }
-  },
-  debug(message, meta) {
-    if (LOG_LEVELS.debug <= currentLevel) {
-      console.log(formatLog('debug', message, meta));
-    }
+  colors: {
+    error: 'red',
+    warn: 'yellow',
+    info: 'green',
+    http: 'magenta',
+    debug: 'blue',
   },
 };
+
+winston.addColors(customLevels.colors);
+
+const logFormat = winston.format.combine(
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
+  winston.format.errors({ stack: true }),
+  winston.format.splat(),
+  winston.format.json()
+);
+
+const devConsoleFormat = winston.format.combine(
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
+  winston.format.colorize({ all: true }),
+  winston.format.printf(({ timestamp, level, message, requestId, eventId, stack, ...meta }) => {
+    const reqStr = requestId ? ` [req:${requestId}]` : '';
+    const evtStr = eventId ? ` [evt:${eventId}]` : '';
+    const metaStr = Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : '';
+    const stackStr = stack ? `\n${stack}` : '';
+    return `[${timestamp}] [${level}]${reqStr}${evtStr}: ${message}${metaStr}${stackStr}`;
+  })
+);
+
+const fileRotateTransport = new winston.transports.DailyRotateFile({
+  filename: path.join(logsDir, 'relay-%DATE%.log'),
+  datePattern: 'YYYY-MM-DD',
+  zippedArchive: true,
+  maxSize: '10m',
+  maxFiles: '14d',
+  level: process.env.LOG_LEVEL || 'debug',
+  format: logFormat,
+});
+
+const fileRotateErrorTransport = new winston.transports.DailyRotateFile({
+  filename: path.join(logsDir, 'relay-error-%DATE%.log'),
+  datePattern: 'YYYY-MM-DD',
+  zippedArchive: true,
+  maxSize: '10m',
+  maxFiles: '30d',
+  level: 'error',
+  format: logFormat,
+});
+
+const transports = [fileRotateTransport, fileRotateErrorTransport];
+
+if (process.env.NODE_ENV !== 'test') {
+  transports.push(
+    new winston.transports.Console({
+      level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
+      format: process.env.NODE_ENV === 'production' || process.env.LOG_FORMAT === 'json' ? logFormat : devConsoleFormat,
+    })
+  );
+}
+
+export const logger = winston.createLogger({
+  levels: customLevels.levels,
+  level: process.env.LOG_LEVEL || 'debug',
+  transports,
+});
 
 export default logger;

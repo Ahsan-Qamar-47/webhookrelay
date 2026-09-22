@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/home/umair/Semester 5/ST-315-L - Project-I/webhookrelay/server/logs/.25cd234e05182dd3f136727760eefe984f537535-audit.json",
+    "files": [
+        {
+            "date": 1790093629732,
+            "name": "/home/umair/Semester 5/ST-315-L - Project-I/webhookrelay/server/logs/relay-2026-09-22.log",
+            "hash": "70bcc43d839bdd301fd79cfc58a9fb33e6b609f801b1fae237d9a7ceda2470cd"
+        }
+    ],
+    "hashType": "sha256"
+}

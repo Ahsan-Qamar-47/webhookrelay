@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Ahsan-Qamar-47/webhookrelay/cli/internal/logger"
 	"github.com/fatih/color"
 	"github.com/gorilla/websocket"
 )
@@ -22,6 +23,19 @@ type UnrecoverableError struct {
 
 func (e *UnrecoverableError) Error() string {
 	return e.Err.Error()
+}
+
+// ConnectionError indicates a network or gateway connection failure (exit code 2).
+type ConnectionError struct {
+	Err error
+}
+
+func (e *ConnectionError) Error() string {
+	return e.Err.Error()
+}
+
+func (e *ConnectionError) Unwrap() error {
+	return e.Err
 }
 
 // Client handles the persistent WebSocket tunnel connection with auto-reconnect.
@@ -170,7 +184,8 @@ func (c *Client) connectAndHandshake(serverURL string) (*AckPayload, error) {
 	dialer := websocket.DefaultDialer
 	conn, _, err := dialer.Dial(serverURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("dial error: %w", err)
+		logger.Error("WebSocket dial failed", "server_url", serverURL, "error", err)
+		return nil, &ConnectionError{Err: fmt.Errorf("dial error: %w", err)}
 	}
 
 	c.mu.Lock()
@@ -191,13 +206,13 @@ func (c *Client) connectAndHandshake(serverURL string) (*AckPayload, error) {
 	c.writeMu.Unlock()
 	if err != nil {
 		conn.Close()
-		return nil, fmt.Errorf("failed to send HANDSHAKE frame: %w", err)
+		return nil, &ConnectionError{Err: fmt.Errorf("failed to send HANDSHAKE frame: %w", err)}
 	}
 
 	var ackFrame Frame
 	if err := conn.ReadJSON(&ackFrame); err != nil {
 		conn.Close()
-		return nil, fmt.Errorf("failed to receive ACK frame: %w", err)
+		return nil, &ConnectionError{Err: fmt.Errorf("failed to receive ACK frame: %w", err)}
 	}
 
 	if ackFrame.Type == "ERROR" {
@@ -273,13 +288,18 @@ func (c *Client) readLoop() {
 		case "EVENT":
 			var event EventPayload
 			if err := json.Unmarshal(frame.Payload, &event); err == nil {
+				logger.Debug("Received EVENT frame", "id", event.ID, "request_id", event.RequestID)
 				go c.handleEvent(&event)
+			} else {
+				logger.Warn("Malformed EVENT frame payload received", "error", err)
+				color.Yellow("⚠️ Received malformed EVENT frame payload (skipped)")
 			}
 		case "PING":
 			c.SendFrame("PONG", map[string]int64{"timestamp": time.Now().UnixMilli()})
 		case "ERROR":
 			var errPayload ErrorPayload
 			_ = json.Unmarshal(frame.Payload, &errPayload)
+			logger.Error("Received ERROR frame from server", "code", errPayload.Code, "message", errPayload.Message)
 			color.Red("✖ Server Error: %s", errPayload.Message)
 		}
 	}
