@@ -1,5 +1,4 @@
 import bcrypt from 'bcryptjs';
-import URL from 'node:url';
 import { query } from '../config/db.js';
 import { verifyToken } from '../utils/jwt.js';
 import { buildPublicUrl } from '../utils/url.js';
@@ -150,9 +149,9 @@ export default function setupTunnel(wss) {
     }
 
     // Attempt URL Query Param Auth (ws://host:8081?token=xyz&subdomain=abc)
-    const parsedUrl = URL.parse(req.url, true);
-    const queryToken = parsedUrl.query ? parsedUrl.query.token : null;
-    const querySubdomain = parsedUrl.query ? parsedUrl.query.subdomain : null;
+    const parsedUrl = new URL(req.url, 'http://localhost');
+    const queryToken = parsedUrl.searchParams.get('token');
+    const querySubdomain = parsedUrl.searchParams.get('subdomain');
 
     if (queryToken && querySubdomain) {
       const auth = await authenticateToken(queryToken);

@@ -26,6 +26,7 @@ type AckPayload struct {
 type EventPayload struct {
 	ID         string                 `json:"id"`
 	EventID    string                 `json:"event_id"`
+	RequestID  string                 `json:"request_id,omitempty"`
 	EndpointID string                 `json:"endpoint_id"`
 	Subdomain  string                 `json:"subdomain"`
 	Provider   string                 `json:"provider"`

@@ -63,12 +63,22 @@ func (r *Replayer) ReplayEvent(event *EventPayload) (*ReplayResultPayload, error
 		req.Header.Set("Content-Type", "application/json")
 	}
 
+	// Propagate X-Request-ID header to local HTTP target
+	if event.RequestID != "" {
+		req.Header.Set("X-Request-ID", event.RequestID)
+	}
+
 	// 4. Execute request
 	resp, err := r.HTTPClient.Do(req)
 	latency := time.Since(start).Milliseconds()
 
+	reqIDTag := ""
+	if event.RequestID != "" {
+		reqIDTag = fmt.Sprintf(" [req:%s]", event.RequestID)
+	}
+
 	if err != nil {
-		color.Red("  ✖ [%s] %s -> ERR: %v (%dms)", method, targetURL, err, latency)
+		color.Red("  ✖ [%s] %s%s -> ERR: %v (%dms)", method, targetURL, reqIDTag, err, latency)
 		return &ReplayResultPayload{
 			EventID:    getEventID(event),
 			StatusCode: 502,
@@ -91,11 +101,11 @@ func (r *Replayer) ReplayEvent(event *EventPayload) (*ReplayResultPayload, error
 	// 6. Colorized console output
 	statusStr := fmt.Sprintf("%d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		color.Green("  ✔ [%s] %s -> %s (%dms)", method, targetURL, statusStr, latency)
+		color.Green("  ✔ [%s] %s%s -> %s (%dms)", method, targetURL, reqIDTag, statusStr, latency)
 	} else if resp.StatusCode >= 300 && resp.StatusCode < 400 {
-		color.Yellow("  ⚡ [%s] %s -> %s (%dms)", method, targetURL, statusStr, latency)
+		color.Yellow("  ⚡ [%s] %s%s -> %s (%dms)", method, targetURL, reqIDTag, statusStr, latency)
 	} else {
-		color.Red("  ✖ [%s] %s -> %s (%dms)", method, targetURL, statusStr, latency)
+		color.Red("  ✖ [%s] %s%s -> %s (%dms)", method, targetURL, reqIDTag, statusStr, latency)
 	}
 
 	return &ReplayResultPayload{

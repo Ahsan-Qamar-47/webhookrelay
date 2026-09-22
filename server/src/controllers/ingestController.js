@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { query } from '../config/db.js';
 import { publishEvent } from '../config/redis.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Infer webhook provider from request headers
@@ -50,6 +51,8 @@ export async function handleIngest(req, res, next) {
     const providerEventId = req.headers['stripe-signature']
       ? `evt_${crypto.randomBytes(8).toString('hex')}`
       : req.headers['x-github-delivery'] || `evt_${crypto.randomBytes(8).toString('hex')}`;
+    const requestId = req.id || req.headers['x-request-id'] || crypto.randomUUID();
+    const requestHeaders = { ...req.headers, 'x-request-id': requestId };
 
     // 2. Insert Event into PostgreSQL
     const eventRes = await query(
@@ -61,7 +64,7 @@ export async function handleIngest(req, res, next) {
         providerEventId,
         provider,
         req.method,
-        JSON.stringify(req.headers),
+        JSON.stringify(requestHeaders),
         JSON.stringify(req.body || {}),
         clientIp,
       ]
@@ -73,11 +76,12 @@ export async function handleIngest(req, res, next) {
     const eventEnvelope = {
       id: event.id,
       event_id: event.event_id,
+      request_id: requestId,
       endpoint_id: endpoint.id,
       subdomain: endpoint.subdomain,
       provider: event.provider,
       method: event.method,
-      headers: req.headers,
+      headers: requestHeaders,
       body: req.body || {},
       payload: req.body || {},
       timestamp: event.received_at,
@@ -87,12 +91,21 @@ export async function handleIngest(req, res, next) {
     await publishEvent(`endpoint:${endpoint.id}`, eventEnvelope);
     await publishEvent(`tunnel:${endpoint.subdomain}`, eventEnvelope);
 
+    logger.info(`Webhook ingested for tunnel ${endpoint.subdomain}`, {
+      requestId,
+      eventId: event.id,
+      provider,
+      method: req.method,
+      tunnelId: endpoint.subdomain,
+    });
+
     // 5. Return HTTP 202 Accepted Response
     return res.status(202).json({
       success: true,
       message: 'Webhook received',
       eventId: event.id,
       providerEventId: event.event_id,
+      requestId,
       tunnelId: endpoint.subdomain,
       status: 'pending',
     });
