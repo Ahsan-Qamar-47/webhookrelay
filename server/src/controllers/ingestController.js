@@ -4,14 +4,21 @@ import { publishEvent } from '../config/redis.js';
 import { logger } from '../utils/logger.js';
 
 /**
- * Infer webhook provider from request headers
+ * Infer webhook provider from request headers, query, or body
  */
-function inferProvider(headers) {
+function inferProvider(headers = {}, query = {}, body = {}) {
   const keys = Object.keys(headers).map((k) => k.toLowerCase());
   if (keys.some((k) => k.includes('stripe'))) return 'stripe';
   if (keys.some((k) => k.includes('github'))) return 'github';
   if (keys.some((k) => k.includes('shopify'))) return 'shopify';
   if (keys.some((k) => k.includes('twilio'))) return 'twilio';
+  if (
+    keys.some((k) => k.includes('hub-signature') || k.includes('meta') || k.includes('whatsapp')) ||
+    query['hub.mode'] ||
+    (body && body.object === 'whatsapp_business_account')
+  ) {
+    return 'whatsapp';
+  }
   return 'generic';
 }
 
@@ -46,13 +53,64 @@ export async function handleIngest(req, res, next) {
     }
 
     const endpoint = epRes.rows[0];
-    const provider = inferProvider(req.headers);
+    const provider = inferProvider(req.headers, req.query, req.body);
     const clientIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const providerEventId = req.headers['stripe-signature']
       ? `evt_${crypto.randomBytes(8).toString('hex')}`
       : req.headers['x-github-delivery'] || `evt_${crypto.randomBytes(8).toString('hex')}`;
     const requestId = req.id || req.headers['x-request-id'] || crypto.randomUUID();
     const requestHeaders = { ...req.headers, 'x-request-id': requestId };
+
+    // Meta / WhatsApp Webhook Challenge Verification (GET request)
+    if (req.method === 'GET' && req.query['hub.mode'] === 'subscribe') {
+      const verifyToken = req.query['hub.verify_token'];
+      const challenge = req.query['hub.challenge'];
+
+      if (endpoint.secret && verifyToken !== endpoint.secret) {
+        logger.warn(`WhatsApp verification failed for endpoint ${endpoint.subdomain}: invalid verify token`);
+        return res.status(403).json({
+          success: false,
+          error: { code: 'VERIFICATION_FAILED', message: 'Verify token mismatch' },
+        });
+      }
+
+      // Record verification event for inspector UI visibility
+      const eventRes = await query(
+        `INSERT INTO events (endpoint_id, event_id, provider, method, headers, payload, ip_address, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'completed')
+         RETURNING id, endpoint_id, event_id, provider, method, headers, payload, status, received_at;`,
+        [
+          endpoint.id,
+          `challenge_${crypto.randomBytes(4).toString('hex')}`,
+          provider,
+          req.method,
+          JSON.stringify(requestHeaders),
+          JSON.stringify(req.query || {}),
+          clientIp,
+        ]
+      );
+
+      const event = eventRes.rows[0];
+      const eventEnvelope = {
+        id: event.id,
+        event_id: event.event_id,
+        request_id: requestId,
+        endpoint_id: endpoint.id,
+        subdomain: endpoint.subdomain,
+        provider: event.provider,
+        method: event.method,
+        headers: requestHeaders,
+        body: req.query || {},
+        payload: req.query || {},
+        timestamp: event.received_at,
+      };
+
+      await publishEvent(`endpoint:${endpoint.id}`, eventEnvelope);
+      await publishEvent(`tunnel:${endpoint.subdomain}`, eventEnvelope);
+
+      logger.info(`WhatsApp webhook challenge verified successfully for ${endpoint.subdomain}`);
+      return res.status(200).send(challenge);
+    }
 
     // 2. Insert Event into PostgreSQL
     const eventRes = await query(
