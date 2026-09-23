@@ -7,12 +7,19 @@ import {
   Play, 
   Copy, 
   Check,
-  GitCompare
+  GitCompare,
+  ShieldCheck
 } from 'lucide-react';
 
 export default function EventHeader({ event, onReplay, onOpenCompare }) {
   const [isReplaying, setIsReplaying] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
+
+  const hasStripeSignature = !!(
+    event?.headers?.['stripe-signature'] ||
+    event?.headers?.['Stripe-Signature'] ||
+    (event?.provider || '').toLowerCase().includes('stripe')
+  );
 
   const handleReplayClick = () => {
     setIsReplaying(true);
@@ -56,7 +63,7 @@ export default function EventHeader({ event, onReplay, onOpenCompare }) {
     <div className="glass-panel p-6 space-y-4">
       {/* Top Header Row */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span className={`px-3 py-1 rounded-md text-xs font-mono font-bold border ${getMethodBadgeClass(event?.method || 'POST')}`}>
             {event?.method || 'POST'}
           </span>
@@ -73,6 +80,16 @@ export default function EventHeader({ event, onReplay, onOpenCompare }) {
             {copiedId ? <Check className="w-3.5 h-3.5 text-relay-green" /> : <Copy className="w-3.5 h-3.5" />}
             <span>{event?.id || 'evt_sample'}</span>
           </button>
+
+          {hasStripeSignature && (
+            <span 
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25"
+              title="Stripe-Signature header preserved for local SDK validation"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Stripe-Signature Preserved</span>
+            </span>
+          )}
         </div>
 
         {/* Action Buttons */}
