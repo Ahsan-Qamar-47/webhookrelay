@@ -13,6 +13,7 @@ import {
   Zap,
   Keyboard
 } from 'lucide-react';
+import SourceBadge from './SourceBadge';
 
 export default function EventList({ 
   events = [], 
@@ -22,6 +23,8 @@ export default function EventList({
   onPageChange,
   methodFilter = '',
   onMethodChange,
+  sourceFilter = '',
+  onSourceChange,
   sourceSearch = '',
   onSourceSearchChange,
   newEventCount = 0,
@@ -101,7 +104,7 @@ export default function EventList({
       {/* Filter & Search Bar */}
       <div className="glass-panel p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3 flex-1">
-          {/* Search Source / Provider */}
+          {/* Search Source / Payload */}
           <div className="relative flex-1 min-w-[200px]">
             <Search className="w-4 h-4 text-relay-muted absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -112,6 +115,25 @@ export default function EventList({
               onChange={(e) => onSourceSearchChange?.(e.target.value)}
               className="w-full bg-relay-dark border border-relay-border rounded-lg pl-9 pr-3 py-2 text-xs text-white placeholder-relay-muted focus:outline-none focus:ring-2 focus:ring-relay-purple-light"
             />
+          </div>
+
+          {/* Webhook Source Provider Dropdown */}
+          <div className="flex items-center gap-2">
+            <select
+              aria-label="Filter by Webhook Source Provider"
+              value={sourceFilter}
+              onChange={(e) => onSourceChange?.(e.target.value)}
+              className="bg-relay-dark border border-relay-border rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-relay-purple-light font-sans font-medium"
+            >
+              <option value="">All Sources</option>
+              <option value="stripe">Stripe</option>
+              <option value="github">GitHub</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="slack">Slack</option>
+              <option value="shopify">Shopify</option>
+              <option value="twilio">Twilio</option>
+              <option value="generic">Generic / Other</option>
+            </select>
           </div>
 
           {/* HTTP Method Dropdown */}
@@ -240,8 +262,8 @@ export default function EventList({
                         </span>
                       </td>
 
-                      <td className="py-3.5 px-4 text-slate-400 font-sans text-xs">
-                        {event.source}
+                      <td className="py-3.5 px-4 font-sans text-xs">
+                        <SourceBadge source={event.source || event.provider} />
                       </td>
 
                       <td className="py-3.5 px-4 text-slate-400 text-xs">

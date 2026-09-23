@@ -3,7 +3,6 @@ import {
   CheckCircle2, 
   AlertCircle, 
   Clock, 
-  Globe, 
   Play, 
   Copy, 
   Check,
@@ -14,6 +13,7 @@ import {
   GitCommit,
   GitBranch
 } from 'lucide-react';
+import SourceBadge from './SourceBadge';
 
 export default function EventHeader({ event, onReplay, onOpenCompare }) {
   const [isReplaying, setIsReplaying] = useState(false);
@@ -157,10 +157,9 @@ export default function EventHeader({ event, onReplay, onOpenCompare }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-relay-border/60 text-xs font-mono">
         <div>
           <span className="text-relay-muted block text-[10px] uppercase tracking-wider mb-1 font-sans">Source Provider</span>
-          <span className="text-slate-200 font-semibold flex items-center gap-1.5">
-            <Globe className="w-3.5 h-3.5 text-relay-purple-light" />
-            {event?.source || event?.provider || 'Stripe / invoice.paid'}
-          </span>
+          <div className="pt-0.5">
+            <SourceBadge source={event?.source || event?.provider} size="sm" />
+          </div>
         </div>
 
         <div>

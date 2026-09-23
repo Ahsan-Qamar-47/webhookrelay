@@ -1,27 +1,38 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Activity } from 'lucide-react';
 import EventList from '../components/events/EventList';
 import { useEventsStream } from '../hooks/useEventsStream';
 
 const initialMockEvents = [
-  { id: 'evt_2001', timestamp: '12s ago', method: 'POST', path: '/api/webhooks/stripe', status: 200, statusText: 'OK', latency: '19ms', source: 'Stripe / invoice.paid' },
-  { id: 'evt_2002', timestamp: '1m ago', method: 'POST', path: '/api/webhooks/github', status: 200, statusText: 'OK', latency: '24ms', source: 'GitHub / push' },
-  { id: 'evt_2003', timestamp: '3m ago', method: 'GET', path: '/api/healthcheck', status: 200, statusText: 'OK', latency: '11ms', source: 'Health Ping' },
-  { id: 'evt_2004', timestamp: '6m ago', method: 'POST', path: '/api/webhooks/shopify', status: 500, statusText: 'Internal Error', latency: '154ms', source: 'Shopify / order.created' },
-  { id: 'evt_2005', timestamp: '9m ago', method: 'PUT', path: '/api/users/sync', status: 200, statusText: 'OK', latency: '32ms', source: 'Auth0 / user.updated' },
-  { id: 'evt_2006', timestamp: '14m ago', method: 'POST', path: '/api/webhooks/stripe', status: 200, statusText: 'OK', latency: '21ms', source: 'Stripe / payment.succeeded' },
-  { id: 'evt_2007', timestamp: '20m ago', method: 'DELETE', path: '/api/subscriptions/cancel', status: 404, statusText: 'Not Found', latency: '16ms', source: 'Custom Client' },
-  { id: 'evt_2008', timestamp: '28m ago', method: 'POST', path: '/api/webhooks/twilio', status: 200, statusText: 'OK', latency: '20ms', source: 'Twilio / sms.received' },
-  { id: 'evt_2009', timestamp: '35m ago', method: 'POST', path: '/api/webhooks/github', status: 200, statusText: 'OK', latency: '28ms', source: 'GitHub / pull_request.opened' },
-  { id: 'evt_2010', timestamp: '42m ago', method: 'POST', path: '/api/webhooks/stripe', status: 200, statusText: 'OK', latency: '22ms', source: 'Stripe / customer.created' },
-  { id: 'evt_2011', timestamp: '50m ago', method: 'POST', path: '/api/webhooks/slack', status: 200, statusText: 'OK', latency: '17ms', source: 'Slack / message.posted' },
-  { id: 'evt_2012', timestamp: '1h ago', method: 'POST', path: '/api/webhooks/segment', status: 200, statusText: 'OK', latency: '25ms', source: 'Segment / track' },
+  { id: 'evt_2001', timestamp: '12s ago', method: 'POST', path: '/api/webhooks/stripe', status: 200, statusText: 'OK', latency: '19ms', source: 'stripe' },
+  { id: 'evt_2002', timestamp: '1m ago', method: 'POST', path: '/api/webhooks/github', status: 200, statusText: 'OK', latency: '24ms', source: 'github' },
+  { id: 'evt_2003', timestamp: '3m ago', method: 'GET', path: '/api/healthcheck', status: 200, statusText: 'OK', latency: '11ms', source: 'generic' },
+  { id: 'evt_2004', timestamp: '6m ago', method: 'POST', path: '/api/webhooks/shopify', status: 500, statusText: 'Internal Error', latency: '154ms', source: 'shopify' },
+  { id: 'evt_2005', timestamp: '9m ago', method: 'PUT', path: '/api/users/sync', status: 200, statusText: 'OK', latency: '32ms', source: 'generic' },
+  { id: 'evt_2006', timestamp: '14m ago', method: 'POST', path: '/api/webhooks/stripe', status: 200, statusText: 'OK', latency: '21ms', source: 'stripe' },
+  { id: 'evt_2007', timestamp: '20m ago', method: 'DELETE', path: '/api/subscriptions/cancel', status: 404, statusText: 'Not Found', latency: '16ms', source: 'generic' },
+  { id: 'evt_2008', timestamp: '28m ago', method: 'POST', path: '/api/webhooks/twilio', status: 200, statusText: 'OK', latency: '20ms', source: 'twilio' },
+  { id: 'evt_2009', timestamp: '35m ago', method: 'POST', path: '/api/webhooks/github', status: 200, statusText: 'OK', latency: '28ms', source: 'github' },
+  { id: 'evt_2010', timestamp: '42m ago', method: 'POST', path: '/api/webhooks/whatsapp', status: 200, statusText: 'OK', latency: '22ms', source: 'whatsapp' },
+  { id: 'evt_2011', timestamp: '50m ago', method: 'POST', path: '/api/webhooks/slack', status: 200, statusText: 'OK', latency: '17ms', source: 'slack' },
+  { id: 'evt_2012', timestamp: '1h ago', method: 'POST', path: '/api/webhooks/segment', status: 200, statusText: 'OK', latency: '25ms', source: 'generic' },
 ];
 
 export default function EventsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [page, setPage] = useState(1);
-  const [methodFilter, setMethodFilter] = useState('');
+  const [methodFilter, setMethodFilter] = useState(searchParams.get('method') || '');
+  const [sourceFilter, setSourceFilter] = useState(searchParams.get('source') || '');
   const [sourceSearch, setSourceSearch] = useState('');
+
+  // Sync state changes with URL query parameters
+  useEffect(() => {
+    const params = {};
+    if (sourceFilter) params.source = sourceFilter;
+    if (methodFilter) params.method = methodFilter;
+    setSearchParams(params, { replace: true });
+  }, [sourceFilter, methodFilter, setSearchParams]);
 
   const {
     liveEvents,
@@ -40,13 +51,16 @@ export default function EventsPage() {
   const filteredEvents = useMemo(() => {
     return allEvents.filter((evt) => {
       const matchesMethod = methodFilter === '' || evt.method === methodFilter;
-      const matchesSource =
+      const matchesSourceDropdown =
+        sourceFilter === '' ||
+        (evt.source || '').toLowerCase().includes(sourceFilter.toLowerCase());
+      const matchesSearch =
         sourceSearch === '' ||
-        evt.source.toLowerCase().includes(sourceSearch.toLowerCase()) ||
-        evt.path.toLowerCase().includes(sourceSearch.toLowerCase());
-      return matchesMethod && matchesSource;
+        (evt.source || '').toLowerCase().includes(sourceSearch.toLowerCase()) ||
+        (evt.path || '').toLowerCase().includes(sourceSearch.toLowerCase());
+      return matchesMethod && matchesSourceDropdown && matchesSearch;
     });
-  }, [allEvents, methodFilter, sourceSearch]);
+  }, [allEvents, methodFilter, sourceFilter, sourceSearch]);
 
   // Pagination slicing
   const limit = 10;
@@ -77,6 +91,8 @@ export default function EventsPage() {
         onPageChange={setPage}
         methodFilter={methodFilter}
         onMethodChange={setMethodFilter}
+        sourceFilter={sourceFilter}
+        onSourceChange={setSourceFilter}
         sourceSearch={sourceSearch}
         onSourceSearchChange={setSourceSearch}
         newEventCount={newEventCount}

@@ -2,25 +2,7 @@ import crypto from 'node:crypto';
 import { query } from '../config/db.js';
 import { publishEvent } from '../config/redis.js';
 import { logger } from '../utils/logger.js';
-
-/**
- * Infer webhook provider from request headers, query, or body
- */
-function inferProvider(headers = {}, query = {}, body = {}) {
-  const keys = Object.keys(headers).map((k) => k.toLowerCase());
-  if (keys.some((k) => k.includes('stripe'))) return 'stripe';
-  if (keys.some((k) => k.includes('github'))) return 'github';
-  if (keys.some((k) => k.includes('shopify'))) return 'shopify';
-  if (keys.some((k) => k.includes('twilio'))) return 'twilio';
-  if (
-    keys.some((k) => k.includes('hub-signature') || k.includes('meta') || k.includes('whatsapp')) ||
-    query['hub.mode'] ||
-    (body && body.object === 'whatsapp_business_account')
-  ) {
-    return 'whatsapp';
-  }
-  return 'generic';
-}
+import { detectSource } from '../utils/source.js';
 
 /**
  * Handle incoming webhook POST/GET/PUT/DELETE at /ingest/:tunnelId
@@ -53,7 +35,8 @@ export async function handleIngest(req, res, next) {
     }
 
     const endpoint = epRes.rows[0];
-    const provider = inferProvider(req.headers, req.query, req.body);
+    const source = detectSource(req.headers, req.query, req.body);
+    const provider = source;
     const clientIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const providerEventId = req.headers['stripe-signature']
       ? `evt_${crypto.randomBytes(8).toString('hex')}`
@@ -76,13 +59,14 @@ export async function handleIngest(req, res, next) {
 
       // Record verification event for inspector UI visibility
       const eventRes = await query(
-        `INSERT INTO events (endpoint_id, event_id, provider, method, headers, payload, ip_address, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, 'completed')
-         RETURNING id, endpoint_id, event_id, provider, method, headers, payload, status, received_at;`,
+        `INSERT INTO events (endpoint_id, event_id, provider, source, method, headers, payload, ip_address, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'completed')
+         RETURNING id, endpoint_id, event_id, provider, source, method, headers, payload, status, received_at;`,
         [
           endpoint.id,
           `challenge_${crypto.randomBytes(4).toString('hex')}`,
           provider,
+          source,
           req.method,
           JSON.stringify(requestHeaders),
           JSON.stringify(req.query || {}),
@@ -98,6 +82,7 @@ export async function handleIngest(req, res, next) {
         endpoint_id: endpoint.id,
         subdomain: endpoint.subdomain,
         provider: event.provider,
+        source: event.source,
         method: event.method,
         headers: requestHeaders,
         body: req.query || {},
@@ -114,13 +99,14 @@ export async function handleIngest(req, res, next) {
 
     // 2. Insert Event into PostgreSQL
     const eventRes = await query(
-      `INSERT INTO events (endpoint_id, event_id, provider, method, headers, payload, ip_address, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
-       RETURNING id, endpoint_id, event_id, provider, method, headers, payload, status, received_at;`,
+      `INSERT INTO events (endpoint_id, event_id, provider, source, method, headers, payload, ip_address, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')
+       RETURNING id, endpoint_id, event_id, provider, source, method, headers, payload, status, received_at;`,
       [
         endpoint.id,
         providerEventId,
         provider,
+        source,
         req.method,
         JSON.stringify(requestHeaders),
         JSON.stringify(req.body || {}),
@@ -138,6 +124,7 @@ export async function handleIngest(req, res, next) {
       endpoint_id: endpoint.id,
       subdomain: endpoint.subdomain,
       provider: event.provider,
+      source: event.source,
       method: event.method,
       headers: requestHeaders,
       body: req.body || {},
@@ -153,6 +140,7 @@ export async function handleIngest(req, res, next) {
       requestId,
       eventId: event.id,
       provider,
+      source,
       method: req.method,
       tunnelId: endpoint.subdomain,
     });
@@ -165,6 +153,7 @@ export async function handleIngest(req, res, next) {
       providerEventId: event.event_id,
       requestId,
       tunnelId: endpoint.subdomain,
+      source,
       status: 'pending',
     });
   } catch (err) {

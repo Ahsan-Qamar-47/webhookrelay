@@ -252,7 +252,7 @@ export async function getEndpointEvents(req, res, next) {
     }
 
     if (filterProvider) {
-      whereClauses.push(`(provider ILIKE $${paramIdx} OR payload::text ILIKE $${paramIdx})`);
+      whereClauses.push(`(COALESCE(source, provider) ILIKE $${paramIdx} OR provider ILIKE $${paramIdx} OR payload::text ILIKE $${paramIdx})`);
       queryParams.push(`%${filterProvider}%`);
       paramIdx++;
     }
@@ -283,7 +283,7 @@ export async function getEndpointEvents(req, res, next) {
     // Data Query
     const dataQueryParams = [...queryParams, limit, offset];
     const eventsRes = await query(
-      `SELECT id, endpoint_id, event_id, provider AS source, method, headers, payload, ip_address, status, response_status, response_headers, response_body, latency_ms, received_at
+      `SELECT id, endpoint_id, event_id, provider, COALESCE(source, provider) AS source, method, headers, payload, ip_address, status, response_status, response_headers, response_body, latency_ms, received_at
        FROM events
        WHERE ${whereSql}
        ORDER BY ${sortSql}
