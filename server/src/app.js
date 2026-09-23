@@ -16,6 +16,7 @@ import ingestRoutes from './routes/ingest.js';
 import authRoutes from './routes/auth.js';
 import endpointRoutes from './routes/endpoints.js';
 import tokenRoutes from './routes/tokens.js';
+import eventRoutes from './routes/events.js';
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use('/ingest', ingestRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/me', authenticate, getMe);
 app.use('/api/endpoints', endpointRoutes);
+app.use('/api/events', eventRoutes);
 app.use('/api/tokens', tokenRoutes);
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
