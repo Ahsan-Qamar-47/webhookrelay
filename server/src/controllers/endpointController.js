@@ -211,10 +211,110 @@ export async function resetEndpoint(req, res, next) {
   }
 }
 
+/**
+ * List events for a specific endpoint with pagination, filtering, and sorting
+ * GET /api/endpoints/:id/events
+ */
+export async function getEndpointEvents(req, res, next) {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Verify endpoint ownership
+    const epCheck = await query('SELECT id FROM endpoints WHERE id = $1 AND user_id = $2;', [id, userId]);
+    if (epCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'ENDPOINT_NOT_FOUND',
+          message: `Endpoint '${id}' does not exist or does not belong to your account.`,
+        },
+      });
+    }
+
+    // Pagination query parameters
+    const page = Math.max(1, parseInt(req.query.page || '1', 10));
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit || '20', 10)));
+    const offset = (page - 1) * limit;
+
+    // Filtering query parameters
+    const { method, source, provider, sort } = req.query;
+    const filterProvider = provider || source;
+
+    const whereClauses = ['endpoint_id = $1'];
+    const queryParams = [id];
+    let paramIdx = 2;
+
+    if (method) {
+      whereClauses.push(`method = $${paramIdx}`);
+      queryParams.push(method.toUpperCase());
+      paramIdx++;
+    }
+
+    if (filterProvider) {
+      whereClauses.push(`(provider ILIKE $${paramIdx} OR payload::text ILIKE $${paramIdx})`);
+      queryParams.push(`%${filterProvider}%`);
+      paramIdx++;
+    }
+
+    const whereSql = whereClauses.join(' AND ');
+
+    // Sorting
+    let sortSql = 'received_at DESC';
+    if (sort) {
+      if (sort === 'receivedAt' || sort === 'received_at') {
+        sortSql = 'received_at ASC';
+      } else if (sort === '-receivedAt' || sort === '-received_at') {
+        sortSql = 'received_at DESC';
+      } else if (sort === 'status') {
+        sortSql = 'status ASC';
+      } else if (sort === '-status') {
+        sortSql = 'status DESC';
+      }
+    }
+
+    // Count Total Query
+    const countRes = await query(
+      `SELECT COUNT(*) FROM events WHERE ${whereSql};`,
+      queryParams
+    );
+    const total = parseInt(countRes.rows[0].count, 10);
+
+    // Data Query
+    const dataQueryParams = [...queryParams, limit, offset];
+    const eventsRes = await query(
+      `SELECT id, endpoint_id, event_id, provider AS source, method, headers, payload, ip_address, status, response_status, response_headers, response_body, latency_ms, received_at
+       FROM events
+       WHERE ${whereSql}
+       ORDER BY ${sortSql}
+       LIMIT $${paramIdx} OFFSET $${paramIdx + 1};`,
+      dataQueryParams
+    );
+
+    res.setHeader('X-Total-Count', total.toString());
+    res.setHeader('Access-Control-Expose-Headers', 'X-Total-Count');
+
+    return res.status(200).json({
+      success: true,
+      data: eventsRes.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit) || 1,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 export default {
   listEndpoints,
   createEndpoint,
   getEndpointById,
   deleteEndpoint,
   resetEndpoint,
+  getEndpointEvents,
 };
+
