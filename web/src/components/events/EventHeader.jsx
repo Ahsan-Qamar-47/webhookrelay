@@ -8,7 +8,11 @@ import {
   Copy, 
   Check,
   GitCompare,
-  ShieldCheck
+  ShieldCheck,
+  ExternalLink,
+  GitPullRequest,
+  GitCommit,
+  GitBranch
 } from 'lucide-react';
 
 export default function EventHeader({ event, onReplay, onOpenCompare }) {
@@ -20,6 +24,13 @@ export default function EventHeader({ event, onReplay, onOpenCompare }) {
     event?.headers?.['Stripe-Signature'] ||
     (event?.provider || '').toLowerCase().includes('stripe')
   );
+
+  const githubEventType = event?.headers?.['x-github-event'] || event?.headers?.['X-GitHub-Event'];
+  const githubUrl = 
+    event?.payload?.repository?.html_url || 
+    event?.payload?.pull_request?.html_url || 
+    event?.payload?.issue?.html_url || 
+    event?.payload?.compare;
 
   const handleReplayClick = () => {
     setIsReplaying(true);
@@ -90,10 +101,39 @@ export default function EventHeader({ event, onReplay, onOpenCompare }) {
               <span>Stripe-Signature Preserved</span>
             </span>
           )}
+
+          {githubEventType && (
+            <span 
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/30"
+              title={`GitHub Event: ${githubEventType}`}
+            >
+              {githubEventType === 'pull_request' ? (
+                <GitPullRequest className="w-3.5 h-3.5 text-purple-300" />
+              ) : githubEventType === 'push' ? (
+                <GitCommit className="w-3.5 h-3.5 text-purple-300" />
+              ) : (
+                <GitBranch className="w-3.5 h-3.5 text-purple-300" />
+              )}
+              <span>GitHub: {githubEventType}</span>
+            </span>
+          )}
         </div>
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
+          {githubUrl && (
+            <a
+              href={githubUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-relay-dark hover:bg-relay-card border border-relay-border text-relay-subtext hover:text-white px-3 py-2 rounded-lg text-xs font-semibold transition-colors"
+              title="Open GitHub page in new tab"
+            >
+              <span>View on GitHub</span>
+              <ExternalLink className="w-3.5 h-3.5 text-relay-purple-light" />
+            </a>
+          )}
+
           <button
             onClick={onOpenCompare}
             className="flex items-center gap-2 bg-relay-card hover:bg-relay-card-hover border border-relay-border hover:border-relay-purple/40 text-slate-200 font-medium px-3.5 py-2 rounded-lg text-xs transition-colors"
