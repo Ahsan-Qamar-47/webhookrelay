@@ -6,10 +6,11 @@ import {
   Globe, 
   Play, 
   Copy, 
-  Check 
+  Check,
+  GitCompare
 } from 'lucide-react';
 
-export default function EventHeader({ event, onReplay }) {
+export default function EventHeader({ event, onReplay, onOpenCompare }) {
   const [isReplaying, setIsReplaying] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
 
@@ -76,6 +77,14 @@ export default function EventHeader({ event, onReplay }) {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
+          <button
+            onClick={onOpenCompare}
+            className="flex items-center gap-2 bg-relay-card hover:bg-relay-card-hover border border-relay-border hover:border-relay-purple/40 text-slate-200 font-medium px-3.5 py-2 rounded-lg text-xs transition-colors"
+          >
+            <GitCompare className="w-3.5 h-3.5 text-relay-purple-light" />
+            <span>Compare with...</span>
+          </button>
+
           <button
             onClick={handleReplayClick}
             disabled={isReplaying}

@@ -1,17 +1,61 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Code, 
   FileText, 
   Sliders, 
-  RotateCw 
+  RotateCw, 
+  GitCompare 
 } from 'lucide-react';
 
 import EventHeader from '../components/events/EventHeader';
 import JsonViewer from '../components/events/JsonViewer';
 import HeadersViewer from '../components/events/HeadersViewer';
 import QueryParams from '../components/events/QueryParams';
+import JsonDiff from '../components/events/JsonDiff';
+import CompareModal from '../components/events/CompareModal';
+
+const sampleComparisonEvents = [
+  {
+    id: 'evt_1091',
+    method: 'POST',
+    path: '/api/webhooks/github',
+    source: 'GitHub / push',
+    payload: {
+      id: 'evt_1M001A2eZvKYlo2C9990123',
+      object: 'event',
+      api_version: '2022-11-15',
+      created: 1672531199,
+      data: {
+        object: {
+          id: 'in_1M001A2eZvKYlo2C9990123',
+          object: 'invoice',
+          amount_due: 5900, // Modified from 4900
+          amount_paid: 5900,
+          currency: 'usd',
+          customer: 'cus_N1892837492',
+          customer_email: 'alex.developer@example.com',
+          paid: true,
+          status: 'paid',
+          subscription: 'sub_1M001A2eZvKYlo2C',
+          tax: 1000, // Added field
+        },
+      },
+      type: 'invoice.updated', // Modified
+    },
+  },
+  {
+    id: 'evt_1090',
+    method: 'GET',
+    path: '/api/healthcheck',
+    source: 'Health Check',
+    payload: {
+      status: 'ok',
+      timestamp: Date.now(),
+    },
+  },
+];
 
 const mockEventDetails = {
   evt_1092: {
@@ -75,7 +119,11 @@ const mockEventDetails = {
 
 export default function EventDetailPage() {
   const { id } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('payload');
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+
+  const compareWithId = searchParams.get('compareWith');
 
   // Fallback data if id not in mock
   const event = mockEventDetails[id] || {
@@ -110,6 +158,17 @@ export default function EventDetailPage() {
     replay_history: [],
   };
 
+  const targetCompareEvent = sampleComparisonEvents.find((evt) => evt.id === compareWithId) || sampleComparisonEvents[0];
+
+  const handleSelectCompareTarget = (targetId) => {
+    setSearchParams({ compareWith: targetId });
+    setActiveTab('diff');
+  };
+
+  const handleOpenCompareModal = () => {
+    setIsCompareModalOpen(true);
+  };
+
   const handleReplay = (eventId) => {
     console.log('Replaying event', eventId);
   };
@@ -126,10 +185,14 @@ export default function EventDetailPage() {
       </Link>
 
       {/* Header Summary Card */}
-      <EventHeader event={event} onReplay={handleReplay} />
+      <EventHeader 
+        event={event} 
+        onReplay={handleReplay} 
+        onOpenCompare={handleOpenCompareModal} 
+      />
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-relay-border/80 gap-2">
+      <div className="flex flex-wrap border-b border-relay-border/80 gap-2">
         <button
           onClick={() => setActiveTab('payload')}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold transition-all border-b-2 ${
@@ -140,6 +203,18 @@ export default function EventDetailPage() {
         >
           <Code className="w-4 h-4" />
           <span>Payload JSON</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('diff')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold transition-all border-b-2 ${
+            activeTab === 'diff'
+              ? 'border-relay-purple text-relay-purple-light bg-relay-purple/10'
+              : 'border-transparent text-relay-subtext hover:text-white'
+          }`}
+        >
+          <GitCompare className="w-4 h-4" />
+          <span>JSON Diff {compareWithId ? `(${compareWithId})` : ''}</span>
         </button>
 
         <button
@@ -181,8 +256,20 @@ export default function EventDetailPage() {
 
       {/* Tab Panels */}
       {activeTab === 'payload' && <JsonViewer payload={event.payload} />}
+
+      {activeTab === 'diff' && (
+        <JsonDiff
+          leftEvent={event}
+          rightEvent={targetCompareEvent}
+          availableEvents={sampleComparisonEvents}
+          onSelectCompareEvent={handleSelectCompareTarget}
+        />
+      )}
+
       {activeTab === 'headers' && <HeadersViewer headers={event.headers} />}
+
       {activeTab === 'query' && <QueryParams queryParams={event.query} event={event} />}
+
       {activeTab === 'replays' && (
         <div className="glass-panel overflow-hidden">
           <div className="p-4 border-b border-relay-border/80 flex items-center gap-2">
@@ -213,6 +300,16 @@ export default function EventDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Compare Modal */}
+      <CompareModal
+        isOpen={isCompareModalOpen}
+        onClose={() => setIsCompareModalOpen(false)}
+        currentEvent={event}
+        availableEvents={sampleComparisonEvents}
+        targetEvent={targetCompareEvent}
+        onSelectTargetEvent={handleSelectCompareTarget}
+      />
     </div>
   );
 }
