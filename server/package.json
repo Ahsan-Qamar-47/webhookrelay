@@ -6,7 +6,8 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "lint": "eslint .",
-    "test": "NODE_ENV=test node --test --test-force-exit",
+    "test": "NODE_ENV=test node --test --test-force-exit src/tests/integration/*.test.js",
+    "test:load": "NODE_ENV=test node scripts/load-test.js",
     "db:migrate": "node -r dotenv/config ./node_modules/.bin/node-pg-migrate -m db/migrations up",
     "db:rollback": "node -r dotenv/config ./node_modules/.bin/node-pg-migrate -m db/migrations down",
     "db:seed": "node -r dotenv/config db/seed.js"
