@@ -15,6 +15,7 @@ import HeadersViewer from '../components/events/HeadersViewer';
 import QueryParams from '../components/events/QueryParams';
 import JsonDiff from '../components/events/JsonDiff';
 import CompareModal from '../components/events/CompareModal';
+import EventTimeline from '../components/events/EventTimeline';
 
 const sampleComparisonEvents = [
   {
@@ -191,6 +192,9 @@ export default function EventDetailPage() {
         onOpenCompare={handleOpenCompareModal} 
       />
 
+      {/* Visual Timeline Bar */}
+      <EventTimeline events={sampleComparisonEvents} activeEventId={event.id} />
+
       {/* Navigation Tabs */}
       <div className="flex flex-wrap border-b border-relay-border/80 gap-2">
         <button
@@ -255,7 +259,7 @@ export default function EventDetailPage() {
       </div>
 
       {/* Tab Panels */}
-      {activeTab === 'payload' && <JsonViewer payload={event.payload} />}
+      {activeTab === 'payload' && <JsonViewer payload={event.payload} headers={event.headers} />}
 
       {activeTab === 'diff' && (
         <JsonDiff
@@ -266,7 +270,7 @@ export default function EventDetailPage() {
         />
       )}
 
-      {activeTab === 'headers' && <HeadersViewer headers={event.headers} />}
+      {activeTab === 'headers' && <HeadersViewer headers={event.headers} event={event} />}
 
       {activeTab === 'query' && <QueryParams queryParams={event.query} event={event} />}
 

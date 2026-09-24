@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Activity } from 'lucide-react';
 import EventList from '../components/events/EventList';
+import EventTimeline from '../components/events/EventTimeline';
 import { useEventsStream } from '../hooks/useEventsStream';
 
 const initialMockEvents = [
@@ -82,6 +83,8 @@ export default function EventsPage() {
           </p>
         </div>
       </div>
+
+      <EventTimeline events={allEvents} />
 
       <EventList
         events={paginatedEvents}
