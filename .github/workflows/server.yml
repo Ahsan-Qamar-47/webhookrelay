@@ -91,7 +91,7 @@ jobs:
       - name: Run load benchmark test
         run: |
           cd server
-          node src/tests/load.js
+          npm run test:load
         env:
           DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/webhookrelay
           POSTGRES_HOST: localhost

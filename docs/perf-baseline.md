@@ -1,7 +1,7 @@
 # WebhookRelay Performance Baseline Report (Month 1 Gate)
 
 **Date**: September 22, 2026  
-**Test Script**: [`server/src/tests/load.js`](file:///home/umair/Semester%205/ST-315-L%20-%20Project-I/webhookrelay/server/src/tests/load.js)  
+**Test Script**: [`server/scripts/load-test.js`](file:///home/umair/Semester%205/ST-315-L%20-%20Project-I/webhookrelay/server/scripts/load-test.js)  
 **Target Endpoint**: `POST /ingest/stripe-demo`  
 **Environment**: Local Development Environment (Node.js v22 + PostgreSQL 16 + Redis 7 + Express)  
 
@@ -61,5 +61,5 @@ The ingestion pipeline handles:
 Run the automated load test script:
 
 ```bash
-node server/src/tests/load.js
+cd server && npm run test:load
 ```

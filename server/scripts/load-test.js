@@ -1,6 +1,6 @@
 import http from 'node:http';
 import express from 'express';
-import { query } from '../src/config/db.js';
+import { query, pool } from '../src/config/db.js';
 import { generateUniqueSubdomain } from '../src/utils/url.js';
 import ingestRouter from '../src/routes/ingest.js';
 
@@ -131,6 +131,8 @@ async function runLoadTest() {
   await query('DELETE FROM endpoints WHERE id = $1;', [endpoint.id]);
   await query('DELETE FROM users WHERE id = $1;', [userId]);
   server.close();
+  agent.destroy();
+  await pool.end();
 
   // 5. Calculate statistics & percentiles
   latencies.sort((a, b) => a - b);
@@ -162,6 +164,7 @@ async function runLoadTest() {
 
   if (eventsLost === 0 && successfulRequests === TOTAL_EVENTS) {
     console.log('🎉 LOAD TEST PASSED: 100% Ingestion Reliability with Zero Data Loss!');
+    process.exit(0);
   } else {
     console.error('❌ LOAD TEST FAILED: Data loss or request errors detected.');
     process.exit(1);

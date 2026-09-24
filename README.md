@@ -229,8 +229,8 @@ cd web && npm run dev
 # Verify health endpoint
 curl http://localhost:8080/health
 
-# Run load benchmark (100 webhooks in 10s)
-node server/src/tests/load.js
+# Run load benchmark (1,000 webhooks)
+cd server && npm run test:load
 
 # Execute unit test suites across CLI and Server
 make test
