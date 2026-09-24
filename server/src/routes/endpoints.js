@@ -6,6 +6,7 @@ import {
   deleteEndpoint,
   resetEndpoint,
   getEndpointEvents,
+  sendTestEvent,
 } from '../controllers/endpointController.js';
 import { authenticate } from '../middleware/auth.js';
 
@@ -18,6 +19,7 @@ router.get('/', listEndpoints);
 router.post('/', createEndpoint);
 router.get('/:id', getEndpointById);
 router.get('/:id/events', getEndpointEvents);
+router.post('/:id/test-event', sendTestEvent);
 router.delete('/:id', deleteEndpoint);
 router.post('/:id/reset', resetEndpoint);
 

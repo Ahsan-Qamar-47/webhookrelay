@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { z } from 'zod';
 import { query } from '../config/db.js';
+import { publishEvent } from '../config/redis.js';
 import { generateUniqueSubdomain, buildPublicUrl } from '../utils/url.js';
 
 // Input Validation Schemas
@@ -309,6 +310,72 @@ export async function getEndpointEvents(req, res, next) {
   }
 }
 
+/**
+ * Fire a synthetic test webhook event for an endpoint
+ * POST /api/endpoints/:id/test-event
+ */
+export async function sendTestEvent(req, res, next) {
+  try {
+    const { id } = req.params;
+
+    const epCheck = await query('SELECT id, subdomain FROM endpoints WHERE (id::text = $1 OR subdomain = $1);', [id]);
+    if (epCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: { code: 'ENDPOINT_NOT_FOUND', message: `Endpoint '${id}' not found.` },
+      });
+    }
+
+    const endpoint = epCheck.rows[0];
+    const eventId = `test_evt_${crypto.randomBytes(6).toString('hex')}`;
+    const testPayload = req.body && Object.keys(req.body).length > 0 ? req.body : {
+      event: 'test.webhook_fired',
+      message: 'Hello from WebhookRelay Onboarding Wizard!',
+      timestamp: new Date().toISOString(),
+      sample_data: { user_id: 101, status: 'active', amount: 49.00 }
+    };
+
+    const headers = {
+      'content-type': 'application/json',
+      'user-agent': 'WebhookRelay-TestTrigger/1.0',
+      'x-relay-test-event': 'true',
+    };
+
+    const eventRes = await query(
+      `INSERT INTO events (endpoint_id, event_id, provider, source, method, headers, payload, ip_address, status)
+       VALUES ($1, $2, 'generic', 'generic', 'POST', $3, $4, '127.0.0.1', 'pending')
+       RETURNING id, endpoint_id, event_id, provider, source, method, headers, payload, status, received_at;`,
+      [endpoint.id, eventId, JSON.stringify(headers), JSON.stringify(testPayload)]
+    );
+
+    const event = eventRes.rows[0];
+    const eventEnvelope = {
+      id: event.id,
+      event_id: event.event_id,
+      endpoint_id: endpoint.id,
+      subdomain: endpoint.subdomain,
+      provider: 'generic',
+      source: 'generic',
+      method: 'POST',
+      headers,
+      body: testPayload,
+      payload: testPayload,
+      timestamp: event.received_at,
+    };
+
+    await publishEvent(`endpoint:${endpoint.id}`, eventEnvelope);
+    await publishEvent(`tunnel:${endpoint.subdomain}`, eventEnvelope);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Test webhook event dispatched successfully',
+      data: eventEnvelope,
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 export default {
   listEndpoints,
   createEndpoint,
@@ -316,5 +383,6 @@ export default {
   deleteEndpoint,
   resetEndpoint,
   getEndpointEvents,
+  sendTestEvent,
 };
 

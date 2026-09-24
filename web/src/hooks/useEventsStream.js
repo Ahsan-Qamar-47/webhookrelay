@@ -5,7 +5,14 @@ export function useEventsStream({ endpointId, token = 'dev-token', wsUrl = 'ws:/
   const [newEventCount, setNewEventCount] = useState(0);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
+
   const wsRef = useRef(null);
+  const autoRefreshRef = useRef(autoRefresh);
+
+  // Keep autoRefreshRef synchronized without triggering reconnection
+  useEffect(() => {
+    autoRefreshRef.current = autoRefresh;
+  }, [autoRefresh]);
 
   useEffect(() => {
     const targetUrl = `${wsUrl}?endpoint=${endpointId || 'dev-tunnel'}&token=${token}`;
@@ -27,22 +34,22 @@ export function useEventsStream({ endpointId, token = 'dev-token', wsUrl = 'ws:/
           const data = JSON.parse(event.data);
 
           if (data.type === 'EVENT' || data.type === 'EVENT_NEW') {
-            const rawEvent = data.payload;
+            const rawEvent = data.payload || data.data || {};
             const formattedEvent = {
               id: rawEvent.id || `evt_${Date.now()}`,
               timestamp: 'Just now',
               method: rawEvent.method || 'POST',
-              path: rawEvent.path || rawEvent.destination_url || '/api/webhooks/incoming',
+              path: rawEvent.path || rawEvent.subdomain ? `/ingest/${rawEvent.subdomain}` : '/api/webhooks/incoming',
               status: rawEvent.response_status || rawEvent.status || 200,
-              statusText: rawEvent.response_status === 500 ? 'Internal Error' : 'OK',
+              statusText: (rawEvent.response_status || rawEvent.status || 200) >= 400 ? 'Error' : 'OK',
               latency: `${rawEvent.latency_ms || 15}ms`,
-              source: rawEvent.provider || rawEvent.source || 'Incoming Webhook',
+              source: rawEvent.provider || rawEvent.source || 'generic',
               receivedAt: rawEvent.received_at || new Date().toISOString(),
-              payload: rawEvent.payload || {},
+              payload: rawEvent.payload || rawEvent.body || {},
               headers: rawEvent.headers || {},
             };
 
-            if (autoRefresh) {
+            if (autoRefreshRef.current) {
               setLiveEvents((prev) => [formattedEvent, ...prev]);
             } else {
               setNewEventCount((prev) => prev + 1);
@@ -71,10 +78,16 @@ export function useEventsStream({ endpointId, token = 'dev-token', wsUrl = 'ws:/
     return () => {
       isSubscribed = false;
       if (socket) {
-        socket.close();
+        socket.onopen = null;
+        socket.onmessage = null;
+        socket.onerror = null;
+        socket.onclose = null;
+        if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+          socket.close();
+        }
       }
     };
-  }, [endpointId, token, wsUrl, autoRefresh]);
+  }, [endpointId, token, wsUrl]);
 
   const flushNewEvents = useCallback(() => {
     setNewEventCount(0);

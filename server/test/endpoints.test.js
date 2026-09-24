@@ -55,6 +55,18 @@ test('Endpoints & Tokens Integration Tests (Supertest)', async (t) => {
     assert.strictEqual(res.body.data.destination_url, 'http://localhost:3000/webhooks');
   });
 
+  await t.test('POST /api/endpoints/:id/test-event dispatches synthetic test webhook', async () => {
+    const res = await request(app)
+      .post(`/api/endpoints/${endpointId}/test-event`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ event: 'user.signup', user_id: 42 });
+
+    assert.strictEqual(res.status, 201);
+    assert.strictEqual(res.body.success, true);
+    assert.strictEqual(res.body.message, 'Test webhook event dispatched successfully');
+    assert.ok(res.body.data.id);
+  });
+
   await t.test('POST /api/endpoints/:id/reset rotates subdomain & secret', async () => {
     const oldRes = await request(app)
       .get(`/api/endpoints/${endpointId}`)

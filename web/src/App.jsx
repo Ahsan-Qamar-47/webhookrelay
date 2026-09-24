@@ -7,6 +7,7 @@ import EventsPage from './pages/EventsPage';
 import EventDetailPage from './pages/EventDetailPage';
 import EndpointsPage from './pages/EndpointsPage';
 import SettingsPage from './pages/SettingsPage';
+import Onboarding from './pages/Onboarding';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,6 +25,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<AppLayout />}>
             <Route index element={<Dashboard />} />
+            <Route path="onboarding" element={<Onboarding />} />
             <Route path="events" element={<EventsPage />} />
             <Route path="events/:id" element={<EventDetailPage />} />
             <Route path="endpoints" element={<EndpointsPage />} />

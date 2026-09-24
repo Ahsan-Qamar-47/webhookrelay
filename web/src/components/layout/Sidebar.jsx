@@ -4,11 +4,13 @@ import {
   Activity, 
   Globe, 
   Settings, 
-  Zap 
+  Zap,
+  Rocket
 } from 'lucide-react';
 
 const navigationItems = [
   { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+  { name: 'Quick Start', path: '/onboarding', icon: Rocket },
   { name: 'Events Log', path: '/events', icon: Activity },
   { name: 'Endpoints', path: '/endpoints', icon: Globe },
   { name: 'Settings', path: '/settings', icon: Settings },
