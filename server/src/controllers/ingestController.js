@@ -3,6 +3,7 @@ import { query } from '../config/db.js';
 import { publishEvent } from '../config/redis.js';
 import { logger } from '../utils/logger.js';
 import { detectSource } from '../utils/source.js';
+import { invalidateEndpointCache } from '../utils/cache.js';
 
 /**
  * Handle incoming webhook POST/GET/PUT/DELETE at /ingest/:tunnelId
@@ -135,6 +136,7 @@ export async function handleIngest(req, res, next) {
     // 4. Publish Event to Redis Pub/Sub channels (endpoint:<id> and tunnel:<subdomain>)
     await publishEvent(`endpoint:${endpoint.id}`, eventEnvelope);
     await publishEvent(`tunnel:${endpoint.subdomain}`, eventEnvelope);
+    await invalidateEndpointCache(endpoint.id);
 
     logger.info(`Webhook ingested for tunnel ${endpoint.subdomain}`, {
       requestId,

@@ -91,7 +91,7 @@ export default function setupBrowserWS(wss) {
       try {
         decoded = verifyToken(token);
       } catch (err) {
-        sendFrame(ws, 'ERROR', { code: 'INVALID_TOKEN', message: 'JWT token invalid or expired.' });
+        sendFrame(ws, 'ERROR', { code: 'INVALID_TOKEN', message: err.message || 'JWT token invalid or expired.' });
         return ws.close(4001, 'Invalid Token');
       }
 

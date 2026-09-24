@@ -1,11 +1,26 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Activity } from 'lucide-react';
 import SourceBadge from './SourceBadge';
 
 export default function EventTimeline({ events = [], activeEventId = null }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [hoveredEvent, setHoveredEvent] = useState(null);
+
+  const handlePrefetch = (eventId) => {
+    if (!eventId) return;
+    queryClient.prefetchQuery({
+      queryKey: ['event', eventId],
+      queryFn: async () => {
+        const res = await fetch(`/api/events/${eventId}`);
+        if (!res.ok) throw new Error('Failed to fetch event detail');
+        return res.json();
+      },
+      staleTime: 30000,
+    });
+  };
 
   if (!events || events.length === 0) {
     return null;
@@ -58,7 +73,10 @@ export default function EventTimeline({ events = [], activeEventId = null }) {
             <div
               key={evt.id}
               className="relative z-10 group"
-              onMouseEnter={() => setHoveredEvent(evt)}
+              onMouseEnter={() => {
+                setHoveredEvent(evt);
+                handlePrefetch(evt.id);
+              }}
               onMouseLeave={() => setHoveredEvent(null)}
             >
               <button

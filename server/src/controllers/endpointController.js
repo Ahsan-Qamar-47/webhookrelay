@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { query } from '../config/db.js';
 import { publishEvent } from '../config/redis.js';
 import { generateUniqueSubdomain, buildPublicUrl } from '../utils/url.js';
+import { getCache, setCache, invalidateEndpointCache } from '../utils/cache.js';
 
 // Input Validation Schemas
 const createEndpointSchema = z.object({
@@ -242,6 +243,16 @@ export async function getEndpointEvents(req, res, next) {
     const { method, source, provider, sort } = req.query;
     const filterProvider = provider || source;
 
+    const cacheKey = `cache:endpoint:${id}:events:${page}:${limit}:${method || 'all'}:${filterProvider || 'all'}:${sort || 'default'}`;
+    const cachedResult = await getCache(cacheKey);
+
+    if (cachedResult) {
+      res.setHeader('X-Total-Count', cachedResult.pagination.total.toString());
+      res.setHeader('Access-Control-Expose-Headers', 'X-Total-Count');
+      res.setHeader('X-Cache', 'HIT');
+      return res.status(200).json(cachedResult);
+    }
+
     const whereClauses = ['endpoint_id = $1'];
     const queryParams = [id];
     let paramIdx = 2;
@@ -292,10 +303,7 @@ export async function getEndpointEvents(req, res, next) {
       dataQueryParams
     );
 
-    res.setHeader('X-Total-Count', total.toString());
-    res.setHeader('Access-Control-Expose-Headers', 'X-Total-Count');
-
-    return res.status(200).json({
+    const responsePayload = {
       success: true,
       data: eventsRes.rows,
       pagination: {
@@ -304,7 +312,15 @@ export async function getEndpointEvents(req, res, next) {
         total,
         totalPages: Math.ceil(total / limit) || 1,
       },
-    });
+    };
+
+    await setCache(cacheKey, responsePayload, 3600);
+
+    res.setHeader('X-Total-Count', total.toString());
+    res.setHeader('Access-Control-Expose-Headers', 'X-Total-Count');
+    res.setHeader('X-Cache', 'MISS');
+
+    return res.status(200).json(responsePayload);
   } catch (err) {
     return next(err);
   }
@@ -365,6 +381,9 @@ export async function sendTestEvent(req, res, next) {
 
     await publishEvent(`endpoint:${endpoint.id}`, eventEnvelope);
     await publishEvent(`tunnel:${endpoint.subdomain}`, eventEnvelope);
+
+    // Invalidate cached event lists for this endpoint
+    await invalidateEndpointCache(endpoint.id);
 
     return res.status(201).json({
       success: true,

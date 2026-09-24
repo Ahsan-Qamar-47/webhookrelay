@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { 
   ArrowLeft, 
   Code, 
@@ -170,8 +171,53 @@ export default function EventDetailPage() {
     setIsCompareModalOpen(true);
   };
 
-  const handleReplay = (eventId) => {
-    console.log('Replaying event', eventId);
+  const queryClient = useQueryClient();
+
+  const replayMutation = useMutation({
+    mutationFn: async (targetEventId) => {
+      const res = await fetch(`/api/events/${targetEventId}/replay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) throw new Error('Replay request failed');
+      return res.json();
+    },
+    onMutate: async (targetEventId) => {
+      await queryClient.cancelQueries({ queryKey: ['event', targetEventId] });
+      const previousData = queryClient.getQueryData(['event', targetEventId]);
+
+      queryClient.setQueryData(['event', targetEventId], (old) => {
+        const optimisticLog = {
+          id: `rep_opt_${Date.now()}`,
+          target_url: old?.data?.destination_url || 'http://localhost:3000/webhook',
+          status_code: 200,
+          latency_ms: 14,
+          replayed_at: 'Just now (optimistic)',
+        };
+        if (!old) return { data: { replay_history: [optimisticLog] } };
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            replay_history: [optimisticLog, ...(old.data?.replay_history || [])],
+          },
+        };
+      });
+
+      return { previousData };
+    },
+    onError: (err, targetEventId, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(['event', targetEventId], context.previousData);
+      }
+    },
+    onSettled: (data, err, targetEventId) => {
+      queryClient.invalidateQueries({ queryKey: ['event', targetEventId] });
+    },
+  });
+
+  const handleReplay = (targetId) => {
+    replayMutation.mutate(targetId || id);
   };
 
   return (

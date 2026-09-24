@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { 
   Activity, 
   Search, 
@@ -34,8 +35,22 @@ export default function EventList({
   isLoading = false
 }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [replayingId, setReplayingId] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const handlePrefetch = (eventId) => {
+    if (!eventId) return;
+    queryClient.prefetchQuery({
+      queryKey: ['event', eventId],
+      queryFn: async () => {
+        const res = await fetch(`/api/events/${eventId}`);
+        if (!res.ok) throw new Error('Failed to fetch event detail');
+        return res.json();
+      },
+      staleTime: 30000,
+    });
+  };
 
   // Keyboard Navigation: j (down), k (up), Enter (inspect)
   useEffect(() => {
@@ -228,6 +243,7 @@ export default function EventList({
                       role="row"
                       tabIndex={0}
                       aria-selected={isSelected}
+                      onMouseEnter={() => handlePrefetch(event.id)}
                       onClick={() => {
                         setSelectedIndex(idx);
                         handleRowClick(event.id);
